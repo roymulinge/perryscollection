@@ -1,0 +1,69 @@
+# Python / Django
+*.pyc
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.log
+*.pid
+*.pot
+*.mo
+db.sqlite3
+*.db
+.coverage
+htmlcov/
+.tox/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Virtual environment
+venv/
+env/
+ENV/
+venv.bak/
+env.bak/
+.venv/
+
+# Environment variables (secrets)
+.env
+.env.*
+!.env.example          # optionally allow an example file
+
+# Database dumps (PostgreSQL, etc.)
+*.sql
+*.dump
+
+# Static / media files (collected by Django)
+staticfiles/
+static/
+media/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Testing
+.pytest_cache/
+*.coverage
+coverage.xml
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Frontend (if you add React/Vite later)
+frontend/node_modules/
+frontend/.env.local
+frontend/build/
+frontend/dist/
