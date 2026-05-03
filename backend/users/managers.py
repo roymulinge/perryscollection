@@ -6,7 +6,10 @@ class CustomUserManager(BaseUserManager):
     Custom user model where email is the unique identifier
     instead of username
     """
-    def create_user(self, email, password=None, *extra_fields):
+    def create_user(self, email, password=None, **extra_fields):
+
+
+
         if not email:
             raise ValueError (_("Email must be set!"))
         email = self.normalize_email(email)
