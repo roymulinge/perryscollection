@@ -59,6 +59,15 @@ AUTHENTICATION_BACKENDS = [
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
+#all auth settings
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_EMAIL_VERIFICTAION = 'optional'
+
+ACCOUNT_SIGNUP_FORM_CLASS = 'users.forms.CustomSignupForm'
+LOGIN_REDIRECT_URL = 'accounts/post-login/'
+
 
 
 MIDDLEWARE = [
