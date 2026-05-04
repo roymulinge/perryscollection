@@ -1,0 +1,8 @@
+<!-- users/templates/users/require_phone.html -->
+<form method="post">
+    {% csrf_token %}
+    <label for="phone">Phone number (optional for now):</label>
+    <input type="text" name="phone_number" id="phone" required>
+    <button type="submit">Save</button>
+    <a href="{% url 'home' %}">Skip</a>
+</form>

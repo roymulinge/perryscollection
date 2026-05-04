@@ -60,13 +60,16 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 #all auth settings
-ACCOUNT_AUTHENTICATION_METHOD = 'email'
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = False
+# ACCOUNT_AUTHENTICATION_METHOD = 'email'
+# ACCOUNT_EMAIL_REQUIRED = True
+# ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_EMAIL_VERIFICTAION = 'optional'
+ACCOUNT_LOGIN_METHODS = {'email'}
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']
+# ACCOUNT_SIGNUP_FORM_CLASS = 'users.forms.CustomSignupForm'
+LOGIN_REDIRECT_URL = '/users/post-login/'
 
-ACCOUNT_SIGNUP_FORM_CLASS = 'users.forms.CustomSignupForm'
-LOGIN_REDIRECT_URL = 'accounts/post-login/'
+ACCOUNT_ADAPTER = 'users.adapters.CustomAccountAdapter'
 
 
 

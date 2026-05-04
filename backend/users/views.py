@@ -1,5 +1,9 @@
 from django.shortcuts import redirect, render
 from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse
+
+def home(request):
+     return HttpResponse('Wecome to the home page!')
 
 @login_required
 def post_login_redirect(request):
@@ -25,4 +29,4 @@ def require_phone(request):
           else:
                return redirect('home')
           
-     return render(request, 'accounts/require_phone.html')
+     return render(request, 'users/require_phone.html')

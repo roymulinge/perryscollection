@@ -3,7 +3,7 @@ from django import forms
 
 class CustomSignupForm(SignupForm):
     phone_number = forms.CharField(
-        max_legth = 15,
+        max_length = 15,
         required = True,
         label = "Phone number"
     )
