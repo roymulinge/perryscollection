@@ -11,6 +11,6 @@ class CustomSignupForm(SignupForm):
     def save(self, request):
         user = super().save(request)
         user.phone_number = self.cleaned_data['phone_number']
-        user.phone_number_required = True
+        user.phone_number_provided = True
         user.save()
         return user
