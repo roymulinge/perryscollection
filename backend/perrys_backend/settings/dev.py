@@ -1,12 +1,20 @@
 from .base import *
+import os
+from dotenv import load_dotenv
+
+load_dotenv()  # Loads .env in development as well
 
 DEBUG = True
-ALLOWED_HOST = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']   # ← note: ALLOWED_HOSTS (plural)
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('DB_NAME', 'perrys_db'),      # fallback to your dev DB name
+        'USER': os.environ.get('DB_USER', 'ROY'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'Destroy$6978'),
+        'HOST': os.environ.get('DB_HOST', 'localhost'),
+        'PORT': os.environ.get('DB_PORT', '5432'),
     }
 }
 

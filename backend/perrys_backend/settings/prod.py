@@ -1,5 +1,8 @@
+from dotenv import load_dotenv
 from .base import *
 import os
+
+load_dotenv()
 
 DEBUG = False
 
@@ -8,6 +11,7 @@ ALLOWED_HOSTS =[]
 
 
 #PostgreSQL configuration via environment variables
+
 DATABASES ={
     'default': {
         'ENGINE': 'django.db.backends.postgresql',

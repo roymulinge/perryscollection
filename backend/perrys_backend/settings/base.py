@@ -71,7 +71,7 @@ LOGIN_REDIRECT_URL = '/users/post-login/'
 
 ACCOUNT_ADAPTER = 'users.adapters.CustomAccountAdapter'
 
-
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
