@@ -50,7 +50,21 @@ INSTALLED_APPS = [
     #Apps
     'users',
     'products',
+    'shopping_cart',
+    'orders',
 ]
+
+CART_SESSION_ID = 'cart'
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',  # if you use tokens
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',   # adjust as needed
+    ],
+}
 
 AUTH_USER_MODEL = 'users.CustomUser'
 
