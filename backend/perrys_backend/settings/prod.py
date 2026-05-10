@@ -23,6 +23,14 @@ DATABASES ={
     }
 }
 
+# settings.py
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': 'redis://127.0.0.1:6379/1',
+    }
+}
+
 #Security settings for production
 SECURE_HSTS_SECONDS = 31536000
 SECURE_SSL_REDIRECT = True
