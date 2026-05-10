@@ -51,7 +51,7 @@ INSTALLED_APPS = [
     'users',
     'products',
     'shopping_cart',
-    'orders',
+    'checkout',
 ]
 
 CART_SESSION_ID = 'cart'
