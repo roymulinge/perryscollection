@@ -6,7 +6,7 @@ from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
 from products.models import Product
-from cart.utils import Cart
+from shopping_cart.utils import Cart
 from .models import Order, OrderItem
 from .serializers import CheckoutSerializer, OrderDetailSerializer, OrderListSerializer
 
