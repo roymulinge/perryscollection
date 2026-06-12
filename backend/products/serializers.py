@@ -1,10 +1,10 @@
+# products/serializers.py
 from rest_framework import serializers
 from rest_framework.reverse import reverse
 from .models import Category, Product
 
 
 class CategorySerializer(serializers.HyperlinkedModelSerializer):
-    """Serializer for Category with absolute URL and product count."""
     url = serializers.HyperlinkedIdentityField(
         view_name='products:category-detail',
         lookup_field='slug'
@@ -21,7 +21,6 @@ class CategorySerializer(serializers.HyperlinkedModelSerializer):
 
 
 class ProductListSerializer(serializers.HyperlinkedModelSerializer):
-    """Lightweight serializer for list views (no full category object)."""
     category_name = serializers.CharField(source='category.name', read_only=True)
     category_url = serializers.HyperlinkedRelatedField(
         view_name='products:category-detail',
@@ -29,6 +28,9 @@ class ProductListSerializer(serializers.HyperlinkedModelSerializer):
         source='category',
         read_only=True
     )
+    # ✅ FIX: declare image_url as a SerializerMethodField
+    # Previously it was listed in `fields` but never declared — Django REST would crash
+    image_url = serializers.SerializerMethodField()
     absolute_url = serializers.SerializerMethodField()
 
     class Meta:
@@ -45,7 +47,7 @@ class ProductListSerializer(serializers.HyperlinkedModelSerializer):
         return reverse('products:product_detail', args=[obj.slug], request=self.context.get('request'))
 
     def get_image_url(self, obj):
-        """Return full image URL if image exists."""
+        # Build full URL if image exists, otherwise return None
         if obj.image:
             request = self.context.get('request')
             return request.build_absolute_uri(obj.image.url) if request else obj.image.url
@@ -53,8 +55,9 @@ class ProductListSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class ProductDetailSerializer(serializers.HyperlinkedModelSerializer):
-    """Full serializer for product detail (includes nested category)."""
     category = CategorySerializer(read_only=True)
+    # ✅ FIX: same issue here — declare it
+    image_url = serializers.SerializerMethodField()
     related_products = serializers.SerializerMethodField()
     absolute_url = serializers.SerializerMethodField()
 
@@ -79,7 +82,6 @@ class ProductDetailSerializer(serializers.HyperlinkedModelSerializer):
         return None
 
     def get_related_products(self, obj):
-        """Return up to 4 related products from same category."""
         related = Product.objects.filter(
             category=obj.category,
             available=True,
@@ -88,13 +90,11 @@ class ProductDetailSerializer(serializers.HyperlinkedModelSerializer):
         return ProductListSerializer(related, many=True, context=self.context).data
 
     def validate_price(self, value):
-        """Custom validation for price."""
         if value <= 0:
             raise serializers.ValidationError("Price must be greater than zero.")
         return value
 
     def validate(self, data):
-        """Cross-field validation."""
         if data.get('stock', 0) == 0 and data.get('available', False):
             raise serializers.ValidationError("Cannot mark product as available with zero stock.")
         compare = data.get('compare_at_price')
