@@ -1,34 +1,50 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
+// src/api/products.js
+// Rewritten to use apiClient (axios) instead of raw fetch.
+// This keeps the pattern consistent across all API files.
 
-async function getJson(path, params = {}) {
-  const url = new URL(`${API_BASE_URL}${path}`, window.location.origin);
+import apiClient from "./client";
 
-  Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== "") {
-      url.searchParams.set(key, value);
-    }
-  });
-
-  const response = await fetch(url.toString(), {
-    headers: {
-      Accept: "application/json",
+/**
+ * Fetch paginated product list with optional filters.
+ * @param {Object} params - { page, q, featured }
+ * @returns {{ products, pagination, filters }}
+ */
+export async function fetchProducts({ page = 1, q = "", featured = "" } = {}) {
+  // axios handles query params via the `params` option —
+  // it builds ?page=1&q=boots automatically, skipping empty values
+  const response = await apiClient.get("/products/", {
+    params: {
+      ...(page > 1 && { page }),          // only send page if > 1
+      ...(q && { q }),                    // only send q if not empty
+      ...(featured && { featured }),      // only send featured if set
     },
   });
-
-  if (!response.ok) {
-    const message = response.status === 404
-      ? "We could not find those products."
-      : "Products could not be loaded right now.";
-    throw new Error(message);
-  }
-
-  return response.json();
+  return response.data;
 }
 
-export function fetchProducts({ page = 1, q = "", featured = "" } = {}) {
-  return getJson("/products/", { page, q, featured });
+/** Fetch all categories */
+export async function fetchCategories() {
+  const response = await apiClient.get("/categories/");
+  return response.data;
 }
 
-export function fetchCategories() {
-  return getJson("/categories/");
+/**
+ * Fetch a single product by slug.
+ * @param {string} slug
+ */
+export async function fetchProduct(slug) {
+  const response = await apiClient.get(`/products/${slug}/`);
+  return response.data;
+}
+
+/**
+ * Fetch products in a category.
+ * @param {string} slug
+ * @param {number} page
+ */
+export async function fetchCategoryProducts(slug, page = 1) {
+  const response = await apiClient.get(`/categories/${slug}/`, {
+    params: { ...(page > 1 && { page }) },
+  });
+  return response.data;
 }
