@@ -1,24 +1,62 @@
-import { useState } from 'react'
-import { Routes, Route } from 'react-router-dom'
+// src/App.jsx
+// The root of the React app. Every provider wraps every route —
+// this is why context is available everywhere.
 
-import HomePage from './pages/HomePage'
-import ProductsPage from './pages/ProductsPage'
-import NavBar from './components/NavBar'
-import RegisterPage from './pages/RegisterPage'
-import LoginPage from './pages/LoginPage'
-function App() {
+import { Routes, Route } from "react-router-dom";
+
+// Providers — must wrap everything
+import { AuthProvider } from "./context/AuthContext";
+import { CartProvider } from "./context/CartContext";
+
+// Layout components
+import NavBar from "./components/NavBar";
+import Footer from "./components/Footer";
+
+// Pages
+import HomePage from "./pages/HomePage";
+import ProductsPage from "./pages/ProductsPage";
+import ProductDetailPage from "./pages/ProductDetailPage";
+import CategoryPage from "./pages/CategoryPage";
+import CartPage from "./pages/CartPage";
+import CheckoutPage from "./pages/CheckoutPage";
+import OrdersPage from "./pages/OrdersPage";
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
+import AccountPage from "./pages/AccountPage";
+import NotFoundPage from "./pages/NotFoundPage";
+
+export default function App() {
   return (
-    <>
-      <NavBar />
+    // AuthProvider first because CartProvider uses useAuth()
+    <AuthProvider>
+      <CartProvider>
+        <NavBar />
 
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/products" element={<ProductsPage />} />
-        <Route path="/login" element={<LoginPage/>}/>
-        <Route path="/register" element={<RegisterPage/>}/>
-      </Routes>
-    </>
-  )
+        <Routes>
+          {/* Public routes — anyone can access */}
+          <Route path="/" element={<HomePage />} />
+          <Route path="/products" element={<ProductsPage />} />
+          <Route path="/products/:slug" element={<ProductDetailPage />} />
+          <Route path="/categories" element={<ProductsPage />} />
+          {/* ↑ Categories list reuses ProductsPage with no filter */}
+          <Route path="/categories/:slug" element={<CategoryPage />} />
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
+
+          {/* Auth routes */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+
+          {/* Protected routes — we check auth inside the component */}
+          <Route path="/account" element={<AccountPage />} />
+          <Route path="/orders" element={<OrdersPage />} />
+
+          {/* Catch-all 404 */}
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+
+        <Footer />
+      </CartProvider>
+    </AuthProvider>
+  );
 }
-
-export default App
