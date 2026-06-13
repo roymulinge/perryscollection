@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.google',
 
     'rest_framework',
+    'rest_framework_simplejwt',
     
     
     #Apps
@@ -59,12 +60,24 @@ CART_SESSION_ID = 'cart'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.TokenAuthentication',  # if you use tokens
+         
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',   # adjust as needed
     ],
+}
+
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    # Access token expires in 1 day — short enough to be safe
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+    # Refresh token expires in 30 days — user stays logged in
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
+    # When you use the refresh endpoint, issue a new refresh token too
+    'ROTATE_REFRESH_TOKENS': True,
 }
 
 AUTH_USER_MODEL = 'users.CustomUser'

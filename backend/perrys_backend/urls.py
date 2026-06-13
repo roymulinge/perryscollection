@@ -1,30 +1,26 @@
-"""
-URL configuration for perrys_backend project.
+# perrys_backend/urls.py
 
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/6.0/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
 from django.contrib import admin
-from django.urls import path,include
-
+from django.urls import path, include
+from rest_framework_simplejwt.views import TokenRefreshView
+# TokenRefreshView is built into simplejwt — takes a refresh token, returns a new access token
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+
+    # Legacy allauth (keep for now, can remove later)
     path('users/', include('users.urls')),
     path('accounts/', include('allauth.urls')),
-    path('', include('products.urls', namespace='products')),
-    path('api/shopping_cart/', include('shopping_cart.urls', namespace='shopping_cart')),
-     path('api/checkout/', include('checkout.urls', namespace='checkout')),
-     path('api/notifications/', include('notifications.urls', namespace='notifications')),
 
+    # ── API routes ──
+    path('', include('products.urls', namespace='products')),
+    path('api/auth/', include('users.urls')),
+    # ↑ React calls /api/auth/login/, /api/auth/register/, /api/auth/me/
+
+    path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    # ↑ React calls this when access token expires to get a new one
+
+    path('api/shopping_cart/', include('shopping_cart.urls', namespace='shopping_cart')),
+    path('api/checkout/', include('checkout.urls', namespace='checkout')),
+    path('api/notifications/', include('notifications.urls', namespace='notifications')),
 ]
