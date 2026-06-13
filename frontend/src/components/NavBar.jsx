@@ -22,6 +22,8 @@ export default function Navbar() {
     { label: "Categories", to: "/categories" },
     { label: "New Arrivals", to: "/products?featured=true" },
     { label: "About", to: "/about" },
+    { label: "Login", to: "/login" },
+    { label: "Register", to: "/register" },
   ];
 
   return (
