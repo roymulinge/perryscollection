@@ -9,6 +9,10 @@ const apiClient = axios.create({
   // baseURL: the root URL prepended to every request
   // import.meta.env.VITE_* reads from your .env file
   // || fallback: if no .env, use localhost during development
+  headers: {
+    "Content-type": "application/json",
+  },
+  //withCredentials: true tells the browser to include cookies in CORS-ORIGIN requests.
 });
 
 // ── REQUEST INTERCEPTOR ──
