@@ -23,6 +23,7 @@ const NAV_ITEMS = [
   { to: "/admin-panel/categories", icon: "ti-tag",              label: "Categories" },
   { to: "/admin-panel/orders",     icon: "ti-receipt",          label: "Orders"     },
   { to: "/admin-panel/stock",      icon: "ti-alert-triangle",   label: "Low Stock"  },
+   { to: "/inventory",              icon: "ti-robot",            label: "AI Inventory" },
 ];
 
 export default function AdminLayout({ title, children }) {

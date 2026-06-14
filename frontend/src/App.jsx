@@ -29,6 +29,7 @@ import AdminProducts     from "./pages/admin/AdminProducts";
 import AdminProductForm  from "./pages/admin/AdminProductForm";
 import AdminOrders       from "./pages/admin/AdminOrders";
 import AdminCategories   from "./pages/admin/AdminCategories";
+import InventoryDashboardPage from "./pages/InventoryDashboardPage";
 
 export default function App() {
   return (
@@ -65,6 +66,8 @@ export default function App() {
           <Route path="/admin-panel/products/:id/edit"       element={<AdminProductForm />} />
           <Route path="/admin-panel/orders"                  element={<AdminOrders />}      />
           <Route path="/admin-panel/categories"              element={<AdminCategories />}  />
+          
+          <Route path="/inventory"                           element={<InventoryDashboardPage />} />
         </Routes>
 
         <Footer />
