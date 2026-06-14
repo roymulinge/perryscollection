@@ -23,4 +23,5 @@ urlpatterns = [
     path('api/shopping_cart/', include('shopping_cart.urls', namespace='shopping_cart')),
     path('api/checkout/', include('checkout.urls', namespace='checkout')),
     path('api/notifications/', include('notifications.urls', namespace='notifications')),
+    path('api/inventory-agent/', include('inventory_agent.urls')),
 ]

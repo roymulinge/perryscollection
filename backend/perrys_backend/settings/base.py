@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'shopping_cart',
     'checkout',
     'notifications',
+    'inventory_agent',
 ]
 
 CART_SESSION_ID = 'cart'
