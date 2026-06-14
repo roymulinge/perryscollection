@@ -2,6 +2,8 @@
 
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
 from rest_framework_simplejwt.views import TokenRefreshView
 # TokenRefreshView is built into simplejwt — takes a refresh token, returns a new access token
 
@@ -24,4 +26,9 @@ urlpatterns = [
     path('api/checkout/', include('checkout.urls', namespace='checkout')),
     path('api/notifications/', include('notifications.urls', namespace='notifications')),
     path('api/inventory-agent/', include('inventory_agent.urls')),
+
+     path('api/admin/', include('products.admin_urls')),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
