@@ -42,6 +42,13 @@ class UserSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = User
-        # Deliberately exclude: password, is_superuser, is_staff
-        fields = ['id', 'email', 'full_name', 'is_shop_owner', 'date_joined']
+        fields = [
+            'id',
+            'email',
+            'full_name',
+            'is_staff',       # ← ADDED: AdminLayout needs this
+            'is_superuser',   # ← ADDED: useful for future checks
+            'is_shop_owner',  # custom field on CustomUser
+            'date_joined',
+        ]
         read_only_fields = fields

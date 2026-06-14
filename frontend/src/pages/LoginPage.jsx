@@ -1,6 +1,14 @@
 // src/pages/LoginPage.jsx
-// Redesigned to match Perry's Collection brand.
-// Uses AuthContext so the whole app knows when login succeeds.
+// ─────────────────────────────────────────────────────────────────
+// WHAT CHANGED FROM YOUR ORIGINAL:
+// 1. Uses useAuth() context — login() stores tokens AND updates
+//    React state in one call, so Navbar and AdminLayout both
+//    instantly know the user is logged in
+// 2. Key names: access_token / refresh_token (matches client.js)
+// 3. Redirects to wherever user came from (location.state.from)
+//    so if they tried /admin-panel and got redirected to /login,
+//    after login they go straight back to /admin-panel
+// ─────────────────────────────────────────────────────────────────
 
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
@@ -8,42 +16,68 @@ import { login } from "../api/auth";
 import { useAuth } from "../context/AuthContext";
 
 export default function LoginPage() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  // location.state?.from: the page the user was trying to visit before being
-  // redirected to login — we send them back there after login succeeds
+  const navigate  = useNavigate();
+  const location  = useLocation();
+  const { login: setAuth } = useAuth();
+  // useAuth() gives us the login() function from AuthContext.
+  // We rename it setAuth to avoid clashing with the login()
+  // function imported from ../api/auth above.
+  // AuthContext.login() does two things at once:
+  //   1. Saves tokens to localStorage under the right key names
+  //   2. Sets the user object in React state
+  // Without this, localStorage has the token but React doesn't
+  // know the user is logged in — AdminLayout sees user=null and
+  // redirects away before the page even renders.
+
+  // location.state?.from: if AdminLayout redirected the user here
+  // because they weren't logged in, it passes the original URL.
+  // After login we send them back there instead of just "/".
+  // The ?. is optional chaining — if state is null, don't crash.
   const from = location.state?.from || "/";
 
-  const { login: setAuth } = useAuth();
-
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [form, setForm]       = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError]     = useState("");
 
   function handleChange(e) {
-    // Computed property name: [e.target.name] lets one handler update any field
+    // [e.target.name]: computed property key.
+    // One handler for all fields. When name="email", updates form.email.
+    // When name="password", updates form.password.
+    // The spread ...prev keeps the other field's value unchanged.
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   }
 
   async function handleSubmit(e) {
-    e.preventDefault(); // prevent browser page reload on form submit
+    e.preventDefault(); // stop browser from reloading the page
     setLoading(true);
     setError("");
 
     try {
+      // login() from api/auth.js calls POST /api/auth/login/
+      // Django returns: { user: {...}, access: "...", refresh: "..." }
       const data = await login(form.email, form.password);
-      // data = { user: {...}, access: "...", refresh: "..." }
 
-      setAuth(data.user, { access: data.access, refresh: data.refresh });
-      // setAuth stores tokens in localStorage and updates React state
+      // setAuth() = AuthContext.login()
+      // Stores tokens in localStorage AND updates React user state
+      // This is the critical step — without it, AdminLayout thinks
+      // no one is logged in even though localStorage has the token
+      setAuth(data.user, {
+        access:  data.access,
+        refresh: data.refresh,
+      });
 
+      // replace: true removes /login from browser history
+      // so the back button doesn't take them back to the login page
       navigate(from, { replace: true });
-      // replace: true so the login page isn't in browser history
+
     } catch (err) {
+      // err.response is the axios error response object
+      // err.response?.data?.error: Django's error message from LoginAPIView
+      // The ?. prevents crashing if the server is down (no response at all)
       const msg = err.response?.data?.error || "Invalid email or password.";
-      // err.response.data.error: the message Django returns in the JSON
       setError(msg);
     } finally {
+      // always runs — whether try succeeded or catch ran
       setLoading(false);
     }
   }
@@ -97,35 +131,47 @@ export default function LoginPage() {
           transition: opacity 0.2s, transform 0.15s;
         }
         .auth-btn:hover:not(:disabled) { opacity: 0.88; transform: translateY(-2px); }
-        .auth-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .auth-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
         .auth-footer { margin-top: 24px; text-align: center; color: #7a5e3a; font-size: 14px; }
         .auth-footer a { color: #c49448; text-decoration: none; font-weight: 600; }
         .auth-footer a:hover { color: #e8c87a; }
         .auth-divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; }
         .auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: rgba(196,148,72,0.15); }
-        .auth-divider span { font-size: 12px; color: #5a3e22; letter-spacing: 0.06em; }
+        .auth-divider span { font-size: 12px; color: #5a3e22; }
         @media (max-width: 520px) { .auth-card { padding: 32px 24px; } }
       `}</style>
 
       <div className="auth-page">
         <div className="auth-card">
+
           <div className="auth-logo">
             <div className="auth-logo-circle">P</div>
             <div className="auth-logo-name">Perry's Collection</div>
           </div>
 
           <h1 className="auth-title">Welcome back</h1>
-          <p className="auth-subtitle">Sign in to your account to continue shopping</p>
+          <p className="auth-subtitle">Sign in to your account to continue</p>
 
+          {/* Only render the error div when there IS an error.
+              role="alert" makes screen readers announce it immediately. */}
           {error && <div className="auth-error" role="alert">{error}</div>}
 
+          {/* noValidate: disables browser's built-in validation popups
+              so we can control the error display ourselves */}
           <form onSubmit={handleSubmit} noValidate>
             <div className="auth-field">
               <label className="auth-label" htmlFor="email">Email address</label>
+              {/* htmlFor + id must match — links the label to the input
+                  so clicking the label focuses the input (accessibility) */}
               <input
-                id="email" className="auth-input" type="email" name="email"
+                id="email"
+                className="auth-input"
+                type="email"
+                name="email"
                 placeholder="you@example.com"
-                value={form.email} onChange={handleChange} required
+                value={form.email}
+                onChange={handleChange}
+                required
                 autoComplete="email"
               />
             </div>
@@ -133,14 +179,20 @@ export default function LoginPage() {
             <div className="auth-field">
               <label className="auth-label" htmlFor="password">Password</label>
               <input
-                id="password" className="auth-input" type="password" name="password"
+                id="password"
+                className="auth-input"
+                type="password"
+                name="password"
                 placeholder="Your password"
-                value={form.password} onChange={handleChange} required
+                value={form.password}
+                onChange={handleChange}
+                required
                 autoComplete="current-password"
               />
             </div>
 
             <button type="submit" className="auth-btn" disabled={loading}>
+              {/* Ternary: if loading show "Signing in…" else show "Sign in" */}
               {loading ? "Signing in…" : "Sign in"}
             </button>
           </form>
