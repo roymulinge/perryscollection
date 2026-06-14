@@ -60,13 +60,13 @@ export default function App() {
           {/* Catch-all 404 */}
           <Route path="*" element={<NotFoundPage />} />
 
-          <Route path="/admin-panel"                         element={<AdminDashboard />}   />
+          <Route path="/admin-panel/"                         element={<AdminDashboard />}   />
           <Route path="/admin-panel/products"                element={<AdminProducts />}    />
           <Route path="/admin-panel/products/new"            element={<AdminProductForm />} />
           <Route path="/admin-panel/products/:id/edit"       element={<AdminProductForm />} />
           <Route path="/admin-panel/orders"                  element={<AdminOrders />}      />
           <Route path="/admin-panel/categories"              element={<AdminCategories />}  />
-          
+
           <Route path="/inventory"                           element={<InventoryDashboardPage />} />
         </Routes>
 

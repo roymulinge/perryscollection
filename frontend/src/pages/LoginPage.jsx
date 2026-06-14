@@ -66,9 +66,20 @@ export default function LoginPage() {
         refresh: data.refresh,
       });
 
-      // replace: true removes /login from browser history
-      // so the back button doesn't take them back to the login page
-      navigate(from, { replace: true });
+      if (from && from !== "/") {
+        // They came from a specific URL — send them back there
+        navigate(from, { replace: true });
+        return; // stop here, don't fall through to role check
+      }
+
+      const isAdmin = data.user.is_staff || data.user.is_shop_owner;
+
+      if(isAdmin){
+        navigate("/admin-panel/", {replace: true} );
+      } else {
+        navigate("/", {replace: true});
+      }
+
 
     } catch (err) {
       // err.response is the axios error response object
