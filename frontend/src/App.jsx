@@ -24,6 +24,11 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import AccountPage from "./pages/AccountPage";
 import NotFoundPage from "./pages/NotFoundPage";
+import AdminDashboard    from "./pages/admin/AdminDashboard";
+import AdminProducts     from "./pages/admin/AdminProducts";
+import AdminProductForm  from "./pages/admin/AdminProductForm";
+import AdminOrders       from "./pages/admin/AdminOrders";
+import AdminCategories   from "./pages/admin/AdminCategories";
 
 export default function App() {
   return (
@@ -53,6 +58,13 @@ export default function App() {
 
           {/* Catch-all 404 */}
           <Route path="*" element={<NotFoundPage />} />
+
+          <Route path="/admin-panel"                         element={<AdminDashboard />}   />
+          <Route path="/admin-panel/products"                element={<AdminProducts />}    />
+          <Route path="/admin-panel/products/new"            element={<AdminProductForm />} />
+          <Route path="/admin-panel/products/:id/edit"       element={<AdminProductForm />} />
+          <Route path="/admin-panel/orders"                  element={<AdminOrders />}      />
+          <Route path="/admin-panel/categories"              element={<AdminCategories />}  />
         </Routes>
 
         <Footer />
