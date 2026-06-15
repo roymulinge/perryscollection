@@ -211,7 +211,7 @@ export default function CartPage() {
 
                 {items.map((item) => (
                   <CartItem
-                    key={item.id}
+                    key={item.product.id}
                     item={item}
                     onRemove={removeItem}
                     onUpdate={updateCartItem}

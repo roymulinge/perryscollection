@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { fetchCategories, fetchProducts } from "../api/products";
-
+import { useCart } from "../context/CartContext";
 const currency = new Intl.NumberFormat("en-KE", {
   style: "currency",
   currency: "KES",
@@ -33,33 +33,94 @@ function ProductImage({ product }) {
 }
 
 function ProductCard({ product }) {
+  const { addItem } = useCart();
+  // useCart() reads from CartContext — the same cart state the Navbar
+  // uses for its badge count. Calling addItem() here updates both.
+
+  const [adding, setAdding]   = useState(false);
+  const [added, setAdded]     = useState(false);
+
+  async function handleAddToCart(e) {
+    // We need to stop this click from bubbling up.
+    // The button is inside an <article> — if click bubbled,
+    // the Link wrapping the image would navigate away.
+    e.stopPropagation();
+
+    if (!product.in_stock || adding) return;
+
+    setAdding(true);
+    try {
+      await addItem(product.id, 1);
+      // POST /api/shopping_cart/add/ → { product_id, quantity: 1 }
+      // CartContext refreshes the cart and the Navbar badge updates
+
+      setAdded(true);
+      setTimeout(() => setAdded(false), 2000); // reset after 2 seconds
+    } catch {
+      // Silently fail — user can retry
+    } finally {
+      setAdding(false);
+    }
+  }
+
   return (
     <article className="pc-product-card">
-      <Link to={`/products/${product.slug}`} className="pc-product-image-link" aria-label={product.name}>
+      {/* Image + tags */}
+      <Link
+        to={`/products/${product.slug}`}
+        className="pc-product-image-link"
+        aria-label={product.name}
+      >
+        {/* ProductImage handles real image vs initials fallback */}
         <ProductImage product={product} />
-        {product.featured && <span className="pc-product-tag">Featured</span>}
-        {!product.in_stock && <span className="pc-product-tag pc-product-tag-muted">Out of stock</span>}
+        {product.featured && (
+          <span className="pc-product-tag">Featured</span>
+        )}
+        {!product.in_stock && (
+          <span className="pc-product-tag pc-product-tag-muted">Out of stock</span>
+        )}
       </Link>
 
+      {/* Text info */}
       <div className="pc-product-info">
-        <p className="pc-product-category">{product.category_name || "Perry's Collection"}</p>
+        <p className="pc-product-category">
+          {product.category_name || "Perry's Collection"}
+        </p>
         <h2>
           <Link to={`/products/${product.slug}`}>{product.name}</Link>
         </h2>
         <div className="pc-product-price-row">
           <span className="pc-product-price">{formatPrice(product.price)}</span>
           {product.compare_at_price && (
-            <span className="pc-product-compare">{formatPrice(product.compare_at_price)}</span>
+            <span className="pc-product-compare">
+              {formatPrice(product.compare_at_price)}
+            </span>
           )}
         </div>
-        <button className="pc-add-button" type="button" disabled={!product.in_stock}>
-          <i className="ti ti-shopping-cart-plus" aria-hidden="true" />
-          {product.in_stock ? "Add to cart" : "Unavailable"}
+
+        {/* Add to cart button — now actually connected to CartContext */}
+        <button
+          className="pc-add-button"
+          type="button"
+          disabled={!product.in_stock || adding}
+          onClick={handleAddToCart}
+          // style changes to green when item is added successfully
+          style={added ? {
+            background: "linear-gradient(135deg,#22c55e,#16a34a)",
+            color: "#0a0603",
+          } : {}}
+        >
+          <i
+            className={`ti ${added ? "ti-check" : "ti-shopping-cart-plus"}`}
+            aria-hidden="true"
+          />
+          {adding ? "Adding…" : added ? "Added!" : product.in_stock ? "Add to cart" : "Unavailable"}
         </button>
       </div>
     </article>
   );
 }
+
 
 function ProductsSkeleton() {
   return Array.from({ length: 8 }, (_, index) => (

@@ -125,8 +125,8 @@ export default function ProductDetailPage() {
               border: "1px solid rgba(196,148,72,0.15)",
               overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center",
             }}>
-              {product.image ? (
-                <img src={product.image} alt={product.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              {product.image_url ? (
+                <img src={product.image_url} alt={product.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               ) : (
                 <div style={{ textAlign: "center" }}>
                   <div style={{
