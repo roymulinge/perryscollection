@@ -6,7 +6,7 @@ from .models import Category, Product
 
 class CategorySerializer(serializers.HyperlinkedModelSerializer):
     url = serializers.HyperlinkedIdentityField(
-        view_name='products:category-detail',
+        view_name='products:category_detail',
         lookup_field='slug'
     )
     product_count = serializers.SerializerMethodField()
@@ -23,7 +23,7 @@ class CategorySerializer(serializers.HyperlinkedModelSerializer):
 class ProductListSerializer(serializers.HyperlinkedModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
     category_url = serializers.HyperlinkedRelatedField(
-        view_name='products:category-detail',
+        view_name='products:category_detail',
         lookup_field='slug',
         source='category',
         read_only=True
