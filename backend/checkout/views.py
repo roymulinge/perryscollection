@@ -2,6 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from django.db.models import F
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
@@ -36,8 +37,20 @@ class CheckoutCreateAPIView(APIView):
 
         # 3. Verify stock for all items (prevent race condition)
         cart_items = list(cart)
+
+        product_ids = [item['product'].id for item in cart_items]
+        locked_products = {
+            p.id: p for p in Product.objects.select_for_update().filter(id__in=product_ids)
+        }
         for item in cart_items:
-            product = item['product']
+            product = locked_products.get(item['product'].id)
+
+            if not product or not product.is_active or not product.available:
+                return Response(
+                    {'error': f'"{item["product"].name}" is no longer available.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
             if item['quantity'] > product.stock:
                 return Response({
                     'error': f'Not enough stock for {product.name}. Only {product.stock} left.'
@@ -69,8 +82,7 @@ class CheckoutCreateAPIView(APIView):
                 price=price
             )
             # Reduce stock
-            product.stock -= quantity
-            product.save()
+            Product.objects.filter(id=product.id).update(stock=F('stock') - quantity)
 
         # 6. Clear cart
         cart.clear()
