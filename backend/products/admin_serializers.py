@@ -103,6 +103,34 @@ class AdminProductSerializer(serializers.ModelSerializer):
                 'compare_at_price': "Compare-at price must be greater than the current price."
             })
         return data
+    
+    def validate_image(self, value):
+        """
+        Runs automatically because DRF calss validate_<fieldname>
+        for any field with a matching method name.
+        `value` here is the uploaded file object
+        """
+
+        if value is None:
+            return value # no image uploaded
+        
+        # size limit: 5 mb
+        max_size_mb = 5
+        if value.size > max_size_mb:
+            raise serializers.ValidationError(
+                f"Image file to large. Maximum size is {max_size_mb}MB,"
+                f"yours is {value.size / (1024*1024):.1f}MB."
+            )
+        # ── Type check: only allow real image content types ──
+        allowed_types = ['image/jpeg', 'image/png', 'image/webp']
+        if value.content_type not in allowed_types:
+            raise serializers.ValidationError(
+                f"Unsupported file type '{value.content_type}'. "
+                f"Please upload a JPEG, PNG, or WebP image."
+            )
+
+        return value
+
 
 
 class AdminOrderItemSerializer(serializers.ModelSerializer):
