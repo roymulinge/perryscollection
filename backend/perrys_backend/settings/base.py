@@ -42,6 +42,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
+
+    'cloudinary_storage',
+    'cloudinary',
+
     'corsheaders',
     'allauth',
     'allauth.account',
@@ -60,6 +64,29 @@ INSTALLED_APPS = [
     'notifications',
     'inventory_agent',
 ]
+
+# ── Cloudinary configuration ───────────────────────────────────────
+# CLOUDINARY_STORAGE is read by django-cloudinary-storage to know
+# which Cloudinary account to upload to. os.environ.get() pulls
+# these from your .env file via load_dotenv() (already called in
+# dev.py and prod.py).
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME'),
+    'API_KEY': os.environ.get('CLOUDINARY_API_KEY'),
+    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET'),
+}
+
+# ── THE KEY LINE ──
+# DEFAULT_FILE_STORAGE tells Django WHERE to send files whenever
+# any ImageField or FileField is saved anywhere in your project.
+# Without this line, Django uses its built-in FileSystemStorage
+# (saves to MEDIA_ROOT on local disk — the thing we're escaping).
+# With this line, EVERY image upload across your entire project
+# (Product.image, and any future ImageField you add) automatically
+# goes to Cloudinary instead. You don't change anything in your
+# models or views — Django's storage abstraction handles it
+# transparently.
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 CART_SESSION_ID = 'cart'
 
