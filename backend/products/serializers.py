@@ -74,17 +74,29 @@ class ProductListSerializer(serializers.ModelSerializer):
 
     def get_image_url(self, obj):
         """
-        Build the full image URL manually.
-        obj.image.url gives the relative path: /media/products/2025/06/shoe.jpg
-        request.build_absolute_uri() prepends the domain:
-        http://127.0.0.1:8000/media/products/2025/06/shoe.jpg
-        This does NOT use reverse() — it's just string concatenation
-        based on the current request's host, so there's no URL name
-        to get wrong.
+            Returns an optimized Cloudinary URL instead of the raw original.
+
+            obj.image.url with Cloudinary storage already returns a full
+            Cloudinary CDN URL like:
+            https://res.cloudinary.com/your-cloud/image/upload/v1234/products/2025/06/tote.jpg
+
+            We insert Cloudinary transformation parameters into that URL:
+            - f_auto:  automatically serves WebP/AVIF to browsers that support
+                    it, falls back to JPEG/PNG otherwise — smaller file size
+                    with zero quality loss perceived by the user
+            - q_auto:  Cloudinary's algorithm picks the best compression level
+                    automatically — usually 30-50% smaller than the original
+                    with no visible difference
+            - w_800:   caps width at 800px — your product images don't need to
+                    be larger than that for any screen, saves bandwidth
         """
         if obj.image:
-            request = self.context.get('request')
-            return request.build_absolute_uri(obj.image.url) if request else obj.image.url
+            url = obj.image.url
+            # Insert transformation params right after '/upload/' in the URL
+            # Cloudinary URLs always have this exact segment
+            if '/upload/' in url:
+                url = url.replace('/upload/', '/upload/f_auto,q_auto,w_800/')
+            return url
         return None
 
 
@@ -114,8 +126,12 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
     def get_image_url(self, obj):
         if obj.image:
-            request = self.context.get('request')
-            return request.build_absolute_uri(obj.image.url) if request else obj.image.url
+            url = obj.image.url
+            # Insert transformation params right after '/upload/' in the URL
+            # Cloudinary URLs always have this exact segment
+            if '/upload/' in url:
+                url = url.replace('/upload/', '/upload/f_auto,q_auto,w_800/')
+            return url
         return None
 
     def get_related_products(self, obj):
