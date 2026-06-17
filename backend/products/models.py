@@ -3,10 +3,6 @@ from django.urls import reverse
 from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError
 from django.utils.text import slugify
-from PIL import Image
-from io import BytesIO
-from django.core.files.base import ContentFile
-import os
 import logging
 
 logger = logging.getLogger(__name__)
@@ -114,34 +110,8 @@ class Product(models.Model):
             self.slug = slugify(self.name)
         # Validate model
         self.full_clean()
-        # Resize image using Pillow (production image processing)
-        if self.image:
-            self._resize_image()
         super().save(*args, **kwargs)
 
-    def _resize_image(self):
-        """Resize image to max 1200x1200, convert to JPEG, compress"""
-        try:
-            img = Image.open(self.image)
-            # Convert to RGB if necessary (e.g., PNG with transparency)
-            if img.mode in ('RGBA', 'P'):
-                img = img.convert('RGB')
-            # Resize while keeping aspect ratio
-            max_size = (1200, 1200)
-            img.thumbnail(max_size, Image.Resampling.LANCZOS)
-
-            # Save to in‑memory buffer as JPEG
-            output = BytesIO()
-            img.save(output, format='JPEG', quality=85, optimize=True)
-            output.seek(0)
-
-            # Replace the file with compressed version
-            name = os.path.splitext(os.path.basename(self.image.name))[0] + '.jpg'
-            self.image.save(name, ContentFile(output.read()), save=False)
-            output.close()
-        except Exception as e:
-            # Log error but don't break the save
-            print(f"Image resize failed for {self.sku}: {e}", exc_info=True)
 
     @property
     def stock_value(self):
