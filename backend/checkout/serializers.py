@@ -42,3 +42,25 @@ class CheckoutSerializer(serializers.Serializer):
     
     # Optional for logged-in users
     save_address = serializers.BooleanField(default=False)
+
+      # ── NEW fields for payment ──
+    payment_method = serializers.ChoiceField(
+        choices=['mpesa', 'cash_on_delivery'],
+        default='cash_on_delivery'
+    )
+    # phone_number is required ONLY when paying via M-Pesa — validated
+    # in the cross-field validate() method below, not here individually,
+    # because "required" depends on another field's value
+    phone_number = serializers.CharField(max_length=15, required=False, allow_blank=True)
+
+    def validate(self, data):
+        """
+        Cross-field validation: M-Pesa payments MUST include a phone number.
+        Cash on Delivery doesn't need one (though it's nice to have for
+        delivery coordination — that's a future improvement).
+        """
+        if data.get('payment_method') == 'mpesa' and not data.get('phone_number', '').strip():
+            raise serializers.ValidationError({
+                'phone_number': 'Phone number is required for M-Pesa payments.'
+            })
+        return data
