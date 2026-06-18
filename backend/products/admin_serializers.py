@@ -116,7 +116,8 @@ class AdminProductSerializer(serializers.ModelSerializer):
         
         # size limit: 5 mb
         max_size_mb = 5
-        if value.size > max_size_mb:
+        max_size_bytes = max_size_mb * 1024 * 1024 
+        if value.size > max_size_bytes:
             raise serializers.ValidationError(
                 f"Image file to large. Maximum size is {max_size_mb}MB,"
                 f"yours is {value.size / (1024*1024):.1f}MB."
