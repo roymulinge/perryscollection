@@ -1,7 +1,11 @@
 // src/pages/CartPage.jsx
-// Shows the current cart contents. Lets users change quantities and remove items.
-// Uses CartContext — no direct API calls here, everything goes through the context.
-// Unauthenticated users can view the cart (it'll just be empty).
+// ─────────────────────────────────────────────────────────────────
+// WHAT CHANGED:
+// - item.product.image → item.product.image_url (matches the backend fix)
+// - Added an "unavailable" banner per item when is_available is false,
+//   reading the new fields the backend now sends
+// - Disabled quantity controls and dimmed the row for unavailable items
+// ─────────────────────────────────────────────────────────────────
 
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
@@ -22,11 +26,15 @@ function CartItem({ item, onRemove, onUpdate }) {
   async function handleRemove() {
     setRemoving(true);
     await onRemove(item.product.id);
-    // No need to setRemoving(false) — component unmounts after removal
   }
 
   const initials = item.product.name.split(" ").slice(0, 2).map((w) => w[0]).join("");
   const subtotal = parseFloat(item.product.price) * item.quantity;
+
+  // is_available comes from the backend's live re-check —
+  // false means this product was deactivated or sold out
+  // AFTER it was added to the cart
+  const unavailable = item.is_available === false;
 
   return (
     <div style={{
@@ -36,9 +44,9 @@ function CartItem({ item, onRemove, onUpdate }) {
       alignItems: "center",
       padding: "1.25rem",
       background: "#1a0f08",
-      border: "1px solid rgba(196,148,72,0.15)",
+      border: unavailable ? "1px solid rgba(239,68,68,0.25)" : "1px solid rgba(196,148,72,0.15)",
       borderRadius: 12,
-      opacity: removing ? 0.5 : 1,
+      opacity: removing ? 0.5 : unavailable ? 0.7 : 1,
       transition: "opacity 0.3s",
     }}>
       {/* Thumbnail */}
@@ -49,8 +57,8 @@ function CartItem({ item, onRemove, onUpdate }) {
           border: "1px solid rgba(196,148,72,0.12)",
           overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center",
         }}>
-          {item.product.image ? (
-            <img src={item.product.image} alt={item.product.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          {item.product.image_url ? (
+            <img src={item.product.image_url} alt={item.product.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           ) : (
             <span style={{ fontSize: 18, fontWeight: 600, color: "#c49448", fontFamily: "Georgia,serif" }}>{initials}</span>
           )}
@@ -64,18 +72,27 @@ function CartItem({ item, onRemove, onUpdate }) {
             {item.product.name}
           </p>
         </Link>
-        {item.product.category && (
-          <p style={{ margin: "0 0 10px", fontSize: 12, color: "#7a5e3a" }}>{item.product.category.name}</p>
+        {item.product.category_name && (
+          <p style={{ margin: "0 0 6px", fontSize: 12, color: "#7a5e3a" }}>{item.product.category_name}</p>
         )}
+
+        {/* Unavailable warning banner */}
+        {unavailable && (
+          <p style={{ margin: "0 0 10px", fontSize: 12, color: "#fca5a5", display: "flex", alignItems: "center", gap: 6 }}>
+            <i className="ti ti-alert-circle" aria-hidden="true" />
+            {item.stock_remaining === 0 ? "Out of stock" : "No longer available"} — please remove this item
+          </p>
+        )}
+
         <p style={{ margin: "0 0 10px", fontSize: 14, color: "#c49448", fontWeight: 600 }}>
           KES {parseInt(item.product.price).toLocaleString()} each
         </p>
 
-        {/* Quantity controls */}
+        {/* Quantity controls — disabled entirely if unavailable */}
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
           <button
             onClick={() => handleQuantityChange(item.quantity - 1)}
-            disabled={item.quantity <= 1 || updating}
+            disabled={item.quantity <= 1 || updating || unavailable}
             style={styles.qtyBtn}
             aria-label="Decrease quantity"
           >
@@ -86,7 +103,7 @@ function CartItem({ item, onRemove, onUpdate }) {
           </span>
           <button
             onClick={() => handleQuantityChange(item.quantity + 1)}
-            disabled={updating}
+            disabled={updating || unavailable}
             style={styles.qtyBtn}
             aria-label="Increase quantity"
           >
@@ -132,6 +149,11 @@ export default function CartPage() {
   const freeDelivery = total >= deliveryThreshold;
   const amountToFreeDelivery = deliveryThreshold - total;
 
+  // Block checkout if ANY item in the cart is unavailable —
+  // prevents the customer reaching checkout with a stale order
+  // that would just fail server-side anyway
+  const hasUnavailableItems = items.some((item) => item.is_available === false);
+
   if (cartLoading) return (
     <div style={styles.center}>
       <div style={styles.spinner} />
@@ -169,7 +191,6 @@ export default function CartPage() {
             )}
           </div>
 
-          {/* Empty state */}
           {items.length === 0 ? (
             <div style={{ textAlign: "center", padding: "6rem 0" }}>
               <i className="ti ti-shopping-cart-off" style={{ fontSize: 64, color: "#2a1708", display: "block", marginBottom: "1.5rem" }} aria-hidden="true" />
@@ -186,10 +207,19 @@ export default function CartPage() {
           ) : (
             <div className="cart-layout" style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: "2rem", alignItems: "start" }}>
 
-              {/* Items list */}
               <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                {/* Free delivery progress bar */}
-                {!freeDelivery && (
+                {hasUnavailableItems && (
+                  <div style={{
+                    padding: "1rem 1.25rem", borderRadius: 10,
+                    background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)",
+                    fontSize: 13, color: "#fca5a5", display: "flex", alignItems: "center", gap: 8,
+                  }}>
+                    <i className="ti ti-alert-circle" aria-hidden="true" />
+                    Some items in your cart are no longer available. Remove them to continue to checkout.
+                  </div>
+                )}
+
+                {!freeDelivery && !hasUnavailableItems && (
                   <div style={{
                     padding: "1rem 1.25rem", borderRadius: 10,
                     background: "rgba(196,148,72,0.06)", border: "1px solid rgba(196,148,72,0.15)",
@@ -203,7 +233,7 @@ export default function CartPage() {
                     </div>
                   </div>
                 )}
-                {freeDelivery && (
+                {freeDelivery && !hasUnavailableItems && (
                   <div style={{ padding: "0.75rem 1.25rem", borderRadius: 10, background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.18)", fontSize: 13, color: "#86efac", display: "flex", alignItems: "center", gap: 8 }}>
                     <i className="ti ti-truck" aria-hidden="true" /> You qualify for free delivery in Nairobi!
                   </div>
@@ -264,19 +294,23 @@ export default function CartPage() {
                       navigate("/checkout");
                     }
                   }}
+                  disabled={hasUnavailableItems}
                   style={{
                     width: "100%", height: 52, border: "none", borderRadius: 12,
-                    background: "linear-gradient(135deg,#c49448,#8b5e1a)",
-                    color: "#120a06", fontSize: 15, fontWeight: 700, cursor: "pointer",
+                    background: hasUnavailableItems
+                      ? "#302014"
+                      : "linear-gradient(135deg,#c49448,#8b5e1a)",
+                    color: hasUnavailableItems ? "#7f613d" : "#120a06",
+                    fontSize: 15, fontWeight: 700,
+                    cursor: hasUnavailableItems ? "not-allowed" : "pointer",
                     letterSpacing: "0.03em", transition: "opacity 0.2s,transform 0.15s",
                   }}
-                  onMouseEnter={(e) => { e.target.style.opacity = "0.88"; e.target.style.transform = "translateY(-2px)"; }}
-                  onMouseLeave={(e) => { e.target.style.opacity = "1"; e.target.style.transform = "none"; }}
                 >
-                  {user ? "Proceed to Checkout" : "Sign in to Checkout"}
+                  {hasUnavailableItems
+                    ? "Remove unavailable items first"
+                    : user ? "Proceed to Checkout" : "Sign in to Checkout"}
                 </button>
 
-                {/* Payment icons */}
                 <div style={{ display: "flex", justifyContent: "center", gap: "0.75rem", marginTop: "1rem" }}>
                   {[
                     { icon: "ti-device-mobile", label: "M-Pesa" },
