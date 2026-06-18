@@ -1,3 +1,4 @@
+# shopping_cart/views.py
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -17,11 +18,18 @@ class CartAPIView(APIView):
     def get(self, request):
         cart = Cart(request)
         items = list(cart)
-        serializer = CartSerializer({
-            'items': items,
-            'total_items': len(cart),
-            'total_price': cart.get_total_price()
-        })
+        serializer = CartSerializer(
+            {
+                'items': items,
+                'total_items': len(cart),
+                'total_price': cart.get_total_price()
+            },
+            # ── FIX: pass request context so nested image_url builds correctly ──
+            # Without this, CartItemProductSerializer.get_image_url() has no
+            # request to call build_absolute_uri() on, and silently returns
+            # a relative path or None depending on Cloudinary's url format.
+            context={'request': request}
+        )
         return Response(serializer.data)
 
     def delete(self, request):
