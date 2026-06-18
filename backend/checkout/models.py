@@ -15,6 +15,11 @@ class Order(models.Model):
         ('cancelled', 'Cancelled'),
     ]
 
+    PAYMENT_METHOD_CHOICES = [
+        ('mpesa', 'M-pesa'),
+        ('cash_on_delivery', 'Cash on Delivery'),
+    ]
+
     # User association (optional for now)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -32,6 +37,10 @@ class Order(models.Model):
     # Customer details (denormalised for safety)
     email = models.EmailField()
     full_name = models.CharField(max_length=200)
+    phone_number = models.CharField(
+        max_length =15, blank=True,
+        help_text = "Format: 2547XXXXXXXX (used for Mpesa STK Push)"
+    )
     address_line1 = models.CharField(max_length=255)
     address_line2 = models.CharField(max_length=255, blank=True)
     city = models.CharField(max_length=100)
@@ -40,9 +49,25 @@ class Order(models.Model):
 
     # Payment & totals
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    #Payemnt method
+    payment_method = models.CharField(
+        max_length=20, choices=PAYMENT_METHOD_CHOICES,
+        default='cash_on_delivery'
+    )
     payment_intent_id = models.CharField(max_length=255, blank=True, help_text="Stripe/PayPal payment ID")
     is_paid = models.BooleanField(default=False)
     paid_at = models.DateTimeField(blank=True, null=True)
+
+    #Mpesa specific tracking fields
+    mpesa_checkout_request_id = models.CharField(
+        max_length=100, blank=True, db_index=True,
+        help_text="Safaricom's CheckoutRequestId for matching callback responses"
+    )
+
+    #MerchantRequestId - Safaricom also sends this, useful for support tickets
+    mpesa_merchant_request_id = models.CharField(max_length=100, blank=True)
+
+    mpesa_receipt_number = models.CharField(max_length=50, blank=True)
 
     class Meta:
         ordering = ['-created_at']
@@ -50,6 +75,7 @@ class Order(models.Model):
             models.Index(fields=['user', '-created_at']),
             models.Index(fields=['status']),
             models.Index(fields=['is_paid']),
+            models.Index(fields=['mpesa_checkout_request_id']),
         ]
 
     def __str__(self):
