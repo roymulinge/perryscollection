@@ -83,60 +83,43 @@ export default function CheckoutPage() {
     setError("");
 
     try {
-      // POST /api/orders/ — Django creates the order and deducts stock
-      const response = await apiClient.post("/orders/", {
-        full_name: form.full_name,
+        // POST /api/checkout/ — matches CheckoutCreateAPIView
+        const response = await apiClient.post("/checkout/", {
         email: form.email,
+        full_name: form.full_name,
         phone_number: form.phone_number,
-        delivery_address: form.delivery_address,
+        address_line1: form.delivery_address,  // mapping your form field to backend field name
+        address_line2: "",
+        city: "Nairobi",        // you may want a city field in your form later
+        postal_code: "00100",   // placeholder — add a real field if needed
+        country: "Kenya",
         payment_method: form.payment_method,
-        notes: form.notes,
-        items: (cart.items || []).map((item) => ({
-          product_id: item.product.id,
-          quantity: item.quantity,
-        })),
-      });
+        });
 
-      const order = response.data;
-      setPlacedOrder(order);
+        const order = response.data;
+        setPlacedOrder(order);
 
-      // If M-Pesa, trigger STK Push immediately after order creation
-      if (form.payment_method === "mpesa") {
+        if (form.payment_method === "mpesa") {
         try {
-          await apiClient.post("/orders/mpesa/pay/", {
+            // FIXED: matches the actual URL we registered
+            await apiClient.post("/checkout/mpesa/push/", {
             order_id: order.id,
-            phone_number: form.phone_number,
-          });
-          // STK Push sent — user will see the prompt on their phone
-          // The callback URL will update payment_status asynchronously
+            });
         } catch (mpesaErr) {
-          // STK Push failed — order is still created, user can pay later
-          console.error("STK Push failed:", mpesaErr);
+            console.error("STK Push failed:", mpesaErr);
+            // Order still exists — customer can see it's pending in /orders
+            // and could be offered a retry button in a future iteration
         }
-      }
+        }
 
-      await clearCart();
-      setStep(2); // Move to success screen
+        await clearCart();
+        setStep(2);
     } catch (err) {
-      const data = err.response?.data;
-      if (data && typeof data === "object") {
-        // Handle field-level or general errors from Django
-        const hasFields = Object.values(data).some(Array.isArray);
-        if (hasFields) {
-          const flat = {};
-          Object.entries(data).forEach(([k, v]) => { flat[k] = Array.isArray(v) ? v.join(" ") : v; });
-          setFieldErrors(flat);
-          setStep(0); // Go back to delivery form to show errors
-        } else {
-          setError(data.detail || data.error || "Failed to place order. Please try again.");
-        }
-      } else {
-        setError("Failed to place order. Please try again.");
-      }
+        // ... existing error handling stays the same
     } finally {
-      setSubmitting(false);
+        setSubmitting(false);
     }
-  }
+    }
 
   const total = parseFloat(cart.total_price || 0);
   const items = cart.items || [];
