@@ -65,6 +65,13 @@ INSTALLED_APPS = [
     'inventory_agent',
 ]
 
+MPESA_CONSUMER_KEY = os.environ.get('MPESA_CONSUMER_KEY')
+MPESA_CONSUMER_SECRET = os.environ.get('MPESA_CONSUMER_SECRET')
+MPESA_SHORTCODE = os.environ.get('MPESA_SHORTCODE')
+MPESA_PASSKEY = os.environ.get('MPESA_PASSKEY')
+MPESA_CALLBACK_URL = os.environ.get('MPESA_CALLBACK_URL')
+MPESA_ENV = os.environ.get('MPESA_ENV', 'sandbox')
+
 # ── Cloudinary configuration ───────────────────────────────────────
 # CLOUDINARY_STORAGE is read by django-cloudinary-storage to know
 # which Cloudinary account to upload to. os.environ.get() pulls
