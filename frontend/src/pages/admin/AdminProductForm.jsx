@@ -265,6 +265,13 @@ export default function AdminProductForm() {
               <i className="ti ti-upload" />
               {imagePreview ? "Change image" : "Upload image"}
             </label>
+
+            {fieldErrors.image && (
+                <p style={{ color: "#f87171", fontSize: 12, marginTop: 8 }}>
+                <i className="ti ti-alert-circle" style={{ marginRight: 4 }} />
+                {fieldErrors.image}
+                </p>
+            )}
             <p style={{ fontSize: 11, color: "#5a3e22", marginTop: 8 }}>
               JPG, PNG, WebP. Max 5MB. Images are resized to 1200×1200 automatically.
             </p>
