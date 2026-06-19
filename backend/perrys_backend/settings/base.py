@@ -93,7 +93,14 @@ CLOUDINARY_STORAGE = {
 # goes to Cloudinary instead. You don't change anything in your
 # models or views — Django's storage abstraction handles it
 # transparently.
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+STORAGES = {
+    "default": {
+        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
 
 CART_SESSION_ID = 'cart'
 
