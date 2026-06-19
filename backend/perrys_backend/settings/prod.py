@@ -41,7 +41,7 @@ CORS_ALLOWED_ORIGINS =[
     '',#Vercel/Netlify Url
 ]
 
-CORS_ALLOW_CREDENTILAS = True
+CORS_ALLOW_CREDENTIALS = True
 
 CACHES = {
     'default':{

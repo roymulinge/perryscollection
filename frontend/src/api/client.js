@@ -12,7 +12,7 @@ const apiClient = axios.create({
   headers: {
     "Content-type": "application/json",
   },
-  //withCredentials: true tells the browser to include cookies in CORS-ORIGIN requests.
+  withCredentials: true //tells the browser to include cookies in CORS-ORIGIN requests.
 });
 
 // ── REQUEST INTERCEPTOR ──

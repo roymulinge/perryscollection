@@ -38,7 +38,7 @@ CORS_ALLOW_METHODS = [
 # Which request headers the browser is allowed to send cross-origin.
 #Authorization is the important one - that's my JWT Bearer token.
 
-CORS_ALLOWED_HEADERS = [
+CORS_ALLOW_HEADERS = [
     'accept',
     'accept-encoding',
     'authorization',
@@ -48,3 +48,9 @@ CORS_ALLOWED_HEADERS = [
     'x-csrftoken',
     'x-requested-with',
 ]
+CORS_ALLOW_CREDENTIALS = True
+
+SESSION_COOKIE_SAMESITE = 'Lax'   # allows the cookie on top-level navigation and most XHR
+SESSION_COOKIE_SECURE = False      # MUST be False on plain http:// in development
+CSRF_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SECURE = False
