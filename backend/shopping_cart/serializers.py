@@ -36,10 +36,17 @@ class CartItemProductSerializer(serializers.ModelSerializer):
         ]
 
     def get_image_url(self, obj):
-        if obj.image:
-            request = self.context.get('request')
-            return request.build_absolute_uri(obj.image.url) if request else obj.image.url
-        return None
+        if not obj.image:
+            return None
+
+        url = obj.image.url
+
+        # Only transform genuine Cloudinary URLs — see products/serializers.py
+        # for the full explanation of why this guard exists
+        if 'res.cloudinary.com' in url and '/upload/' in url:
+            url = url.replace('/upload/', '/upload/f_auto,q_auto,w_800/')
+
+        return url
 
 
 class CartItemSerializer(serializers.Serializer):

@@ -16,36 +16,33 @@ export default function CheckoutPage() {
   const { cart, clearCart } = useCart();
   const { user } = useAuth();
 
-  const [step, setStep] = useState(0); // 0 = delivery, 1 = payment, 2 = confirm / placed
+  const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [mpesaError, setMpesaError] = useState(""); // separate so order success still shows
   const [placedOrder, setPlacedOrder] = useState(null);
-  // placedOrder: set after successful order creation — shown on the success screen
 
   const [form, setForm] = useState({
     full_name: user?.full_name || "",
     email: user?.email || "",
     phone_number: "",
     delivery_address: "",
-    payment_method: "cash_on_delivery", // "cash_on_delivery" | "mpesa"
+    payment_method: "cash_on_delivery",
     notes: "",
   });
 
   const [fieldErrors, setFieldErrors] = useState({});
 
-  // Redirect unauthenticated users
   useEffect(() => {
     if (!user) navigate("/login", { state: { from: "/checkout" } });
   }, [user, navigate]);
 
-  // Redirect if cart is empty (can happen after order is placed or direct URL visit)
   useEffect(() => {
     if (!placedOrder && cart.items?.length === 0 && !submitting) {
       navigate("/cart");
     }
   }, [cart.items, placedOrder, submitting, navigate]);
 
-  // Pre-fill form if user data changes (e.g. loads after mount)
   useEffect(() => {
     if (user) {
       setForm((f) => ({
@@ -81,45 +78,56 @@ export default function CheckoutPage() {
   async function handlePlaceOrder() {
     setSubmitting(true);
     setError("");
+    setMpesaError("");
 
     try {
-        // POST /api/checkout/ — matches CheckoutCreateAPIView
-        const response = await apiClient.post("/checkout/", {
+      const response = await apiClient.post("/checkout/", {
         email: form.email,
         full_name: form.full_name,
         phone_number: form.phone_number,
-        address_line1: form.delivery_address,  // mapping your form field to backend field name
+        address_line1: form.delivery_address,
         address_line2: "",
-        city: "Nairobi",        // you may want a city field in your form later
-        postal_code: "00100",   // placeholder — add a real field if needed
+        city: "Nairobi",
+        postal_code: "00100",
         country: "Kenya",
         payment_method: form.payment_method,
-        });
+        notes: form.notes,
+      });
 
-        const order = response.data;
-        setPlacedOrder(order);
+      const order = response.data;
+      setPlacedOrder(order);
 
-        if (form.payment_method === "mpesa") {
+      if (form.payment_method === "mpesa") {
         try {
-            // FIXED: matches the actual URL we registered
-            await apiClient.post("/checkout/mpesa/push/", {
+          await apiClient.post("/checkout/mpesa/push/", {
             order_id: order.id,
-            });
+          });
         } catch (mpesaErr) {
-            console.error("STK Push failed:", mpesaErr);
-            // Order still exists — customer can see it's pending in /orders
-            // and could be offered a retry button in a future iteration
+          // Order exists — just warn the user, don't block the success screen.
+          // They can retry from /orders.
+          const detail =
+            mpesaErr.response?.data?.error ||
+            mpesaErr.response?.data?.detail ||
+            "STK Push failed. You can retry payment from your orders page.";
+          setMpesaError(detail);
+          console.error("STK Push failed:", mpesaErr.response?.data || mpesaErr.message);
         }
-        }
+      }
 
-        await clearCart();
-        setStep(2);
+      await clearCart();
+      setStep(2);
     } catch (err) {
-        // ... existing error handling stays the same
+      const detail =
+        err.response?.data?.detail ||
+        err.response?.data?.error ||
+        (typeof err.response?.data === "string" ? err.response.data : null) ||
+        "Something went wrong placing your order. Please try again.";
+      setError(detail);
+      console.error("Checkout error:", err.response?.data || err.message);
     } finally {
-        setSubmitting(false);
+      setSubmitting(false);
     }
-    }
+  }
 
   const total = parseFloat(cart.total_price || 0);
   const items = cart.items || [];
@@ -136,20 +144,29 @@ export default function CheckoutPage() {
             Order placed!
           </h1>
           <p style={{ color: "#7a5e3a", fontSize: 15, lineHeight: 1.7, margin: "0 0 0.5rem" }}>
-            Thank you, {placedOrder.full_name.split(" ")[0]}. Your order <strong style={{ color: "#c49448" }}>#{placedOrder.id}</strong> has been received.
+            Thank you, {placedOrder.full_name.split(" ")[0]}. Your order{" "}
+            <strong style={{ color: "#c49448" }}>#{placedOrder.id}</strong> has been received.
           </p>
 
           {placedOrder.payment_method === "mpesa" ? (
-            <p style={{ color: "#c4ab82", fontSize: 14, lineHeight: 1.7, margin: "0 0 2rem", padding: "1rem", background: "rgba(196,148,72,0.06)", border: "1px solid rgba(196,148,72,0.15)", borderRadius: 10 }}>
-              An M-Pesa prompt has been sent to <strong>{placedOrder.phone_number}</strong>. Enter your PIN to complete payment. If you didn't receive a prompt, check your order history to retry.
-            </p>
+            <>
+              <p style={{ color: "#c4ab82", fontSize: 14, lineHeight: 1.7, margin: "0 0 1rem", padding: "1rem", background: "rgba(196,148,72,0.06)", border: "1px solid rgba(196,148,72,0.15)", borderRadius: 10 }}>
+                An M-Pesa prompt has been sent to <strong>{placedOrder.phone_number}</strong>. Enter your PIN to complete payment.
+              </p>
+              {/* Show STK push error inline without hiding the success state */}
+              {mpesaError && (
+                <p style={{ color: "#fca5a5", fontSize: 13, lineHeight: 1.6, margin: "0 0 1rem", padding: "10px 14px", background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 10 }}>
+                  ⚠️ {mpesaError}
+                </p>
+              )}
+            </>
           ) : (
             <p style={{ color: "#7a5e3a", fontSize: 14, lineHeight: 1.7, margin: "0 0 2rem" }}>
               You'll pay <strong style={{ color: "#c49448" }}>KES {parseInt(placedOrder.total_amount).toLocaleString()}</strong> on delivery. We'll contact you on {placedOrder.phone_number} to confirm delivery.
             </p>
           )}
 
-          <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center", flexWrap: "wrap", marginTop: "1.5rem" }}>
             <Link to="/orders" style={styles.goldBtn}>View my orders</Link>
             <Link to="/products" style={styles.ghostBtn}>Continue shopping</Link>
           </div>
@@ -186,7 +203,6 @@ export default function CheckoutPage() {
               Checkout
             </h1>
 
-            {/* Step indicator */}
             <div style={{ display: "flex", gap: "0", maxWidth: 400 }}>
               {STEPS.slice(0, 2).map((label, i) => (
                 <div key={label} style={{ display: "flex", alignItems: "center", flex: i < 1 ? 1 : "none" }}>
@@ -221,12 +237,10 @@ export default function CheckoutPage() {
                 </div>
               )}
 
-              {/* Step 0: Delivery details */}
               {step === 0 && (
                 <div style={styles.card}>
                   <h2 style={styles.cardTitle}>Delivery details</h2>
                   <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-
                     {[
                       { name: "full_name", label: "Full name", type: "text", placeholder: "Jane Muthoni" },
                       { name: "email", label: "Email address", type: "email", placeholder: "you@example.com" },
@@ -256,7 +270,9 @@ export default function CheckoutPage() {
                     </div>
 
                     <div>
-                      <label style={styles.label} htmlFor="notes">Order notes <span style={{ color: "#5a3e22", fontWeight: 400 }}>(optional)</span></label>
+                      <label style={styles.label} htmlFor="notes">
+                        Order notes <span style={{ color: "#5a3e22", fontWeight: 400 }}>(optional)</span>
+                      </label>
                       <textarea
                         id="notes" name="notes"
                         placeholder="Special requests, delivery instructions…"
@@ -269,13 +285,11 @@ export default function CheckoutPage() {
                 </div>
               )}
 
-              {/* Step 1: Payment method */}
               {step === 1 && (
                 <div style={styles.card}>
                   <h2 style={styles.cardTitle}>Payment method</h2>
                   <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
 
-                    {/* M-Pesa */}
                     <div
                       className={`ck-payment-opt ${form.payment_method === "mpesa" ? "selected" : ""}`}
                       onClick={() => setForm((f) => ({ ...f, payment_method: "mpesa" }))}
@@ -288,7 +302,7 @@ export default function CheckoutPage() {
                       <div>
                         <p style={{ margin: "0 0 3px", fontWeight: 600, color: "#ddc799", fontSize: 15 }}>M-Pesa</p>
                         <p style={{ margin: 0, fontSize: 13, color: "#7a5e3a", lineHeight: 1.5 }}>
-                          Pay via Lipa na M-Pesa. You'll receive a prompt on your phone after placing the order. Enter your PIN to complete payment.
+                          Pay via Lipa na M-Pesa. You'll receive a prompt on your phone after placing the order.
                         </p>
                       </div>
                       <div style={{ marginLeft: "auto", flexShrink: 0, width: 20, height: 20, borderRadius: "50%", border: `2px solid ${form.payment_method === "mpesa" ? "#c49448" : "rgba(196,148,72,0.25)"}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -296,7 +310,6 @@ export default function CheckoutPage() {
                       </div>
                     </div>
 
-                    {/* Cash on Delivery */}
                     <div
                       className={`ck-payment-opt ${form.payment_method === "cash_on_delivery" ? "selected" : ""}`}
                       onClick={() => setForm((f) => ({ ...f, payment_method: "cash_on_delivery" }))}
@@ -320,7 +333,6 @@ export default function CheckoutPage() {
                 </div>
               )}
 
-              {/* Navigation buttons */}
               <div style={{ display: "flex", gap: "0.75rem", marginTop: "1.5rem" }}>
                 {step > 0 && (
                   <button onClick={() => setStep((s) => s - 1)} style={styles.ghostBtn}>
@@ -333,7 +345,11 @@ export default function CheckoutPage() {
                   </button>
                 )}
                 {step === 1 && (
-                  <button onClick={handlePlaceOrder} disabled={submitting} style={{ ...styles.goldBtn, opacity: submitting ? 0.6 : 1, cursor: submitting ? "not-allowed" : "pointer" }}>
+                  <button
+                    onClick={handlePlaceOrder}
+                    disabled={submitting}
+                    style={{ ...styles.goldBtn, opacity: submitting ? 0.6 : 1, cursor: submitting ? "not-allowed" : "pointer" }}
+                  >
                     {submitting ? "Placing order…" : "Place Order"}
                     {!submitting && <i className="ti ti-check" aria-hidden="true" />}
                   </button>
@@ -347,7 +363,10 @@ export default function CheckoutPage() {
 
               <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginBottom: "1rem" }}>
                 {items.map((item) => (
-                  <div key={item.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.75rem", fontSize: 14 }}>
+                  // FIX: key was item.id which doesn't exist on cart items.
+                  // Cart items are shaped as { product: { id, name, ... }, quantity, price }
+                  // so the correct unique key is item.product.id.
+                  <div key={item.product.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.75rem", fontSize: 14 }}>
                     <span style={{ color: "#c4ab82", flex: 1 }}>
                       {item.product.name}
                       <span style={{ color: "#5a3e22" }}> × {item.quantity}</span>
@@ -366,7 +385,6 @@ export default function CheckoutPage() {
                 </span>
               </div>
 
-              {/* Delivery details recap on step 1 */}
               {step === 1 && (
                 <div style={{ marginTop: "1.25rem", padding: "12px 14px", background: "rgba(196,148,72,0.05)", border: "1px solid rgba(196,148,72,0.12)", borderRadius: 10, fontSize: 13, color: "#7a5e3a", lineHeight: 1.7 }}>
                   <p style={{ margin: "0 0 4px", fontWeight: 600, color: "#c4ab82" }}>Delivering to:</p>

@@ -1,17 +1,19 @@
 # users/views.py
 
-from django.shortcuts import redirect, render
-from django.contrib.auth.decorators import login_required
+
 from django.http import HttpResponse
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
+from shopping_cart.utils import Cart
+
 # RefreshToken is how simplejwt generates token pairs:
 # RefreshToken.for_user(user) → gives you both access and refresh tokens
 
-from .serializers import RegisterSerializer, UserSerializer
+from .serializers import RegisterSerializer, UserSerializer, ProfileUpdateSerializer
+from .models import Profile
 
 
 class RegisterAPIView(APIView):
@@ -78,8 +80,13 @@ class LoginAPIView(APIView):
                 {'error': 'This account has been disabled.'},
                 status=status.HTTP_403_FORBIDDEN
             )
+        pre_login_cart_data = dict(request.session.get('cart', {}))
 
         refresh = RefreshToken.for_user(user)
+     
+        if pre_login_cart_data:
+            request.session['cart'] = pre_login_cart_data
+            request.session.modified = True
 
         return Response({
             'user': UserSerializer(user).data,
@@ -105,22 +112,32 @@ class MeAPIView(APIView):
 # ── Keep your existing template-based views below ──
 # (these can be removed once you're fully on React)
 
-@login_required
-def post_login_redirect(request):
-    if not request.user.phone_number_provided:
-        return redirect('require_phone')
-    return redirect('home')
+class ProfileAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
 
+        Profile.objects.get_or_create(
+            user=request.user,
+            defaults = {'name': request.user.full_name}
+        )
+        return Response(UserSerializer(request.user).data)
+    
 
-@login_required
-def require_phone(request):
-    if request.user.phone_number_provided:
-        return redirect('home')
-    if request.method == 'POST':
-        phone = request.POST.get('phone_number')
-        if phone:
-            request.user.phone_number = phone
-            request.user.phone_number_provided = True
-            request.user.save()
-            return redirect('home')
-    return render(request, 'users/require_phone.html')
+    def patch(self, request):
+        profile, created = Profile.objects.get_or_create(user=request.user)
+
+        serializer = ProfileUpdateSerializer(
+            instance=profile,
+            data=request.data,
+            partial=True,
+            context={'request': request}
+        )
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        serializer.save()
+
+        return Response(UserSerializer(request.user).data)
+

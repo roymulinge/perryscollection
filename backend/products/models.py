@@ -15,7 +15,7 @@ class Category(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['-created_at']          # fixed typo
+        ordering = ['name']          
         verbose_name_plural = 'Categories'
         indexes = [
             models.Index(fields=['slug']),
@@ -36,11 +36,11 @@ class Category(models.Model):
 class Product(models.Model):
     # Core identifiers
     sku = models.CharField(
-        max_length=50, unique=True, db_index=True,
+        max_length=50,  unique=True,
         help_text="Stock Keeping Unit – must be unique"
     )
-    name = models.CharField(max_length=200, db_index=True)
-    slug = models.SlugField(max_length=200, unique=True, db_index=True)
+    name = models.CharField(max_length=200, unique=True)
+    slug = models.SlugField(max_length=200, unique=True,)
     category = models.ForeignKey(
         Category,
         on_delete=models.PROTECT,          # prevent orphaned products

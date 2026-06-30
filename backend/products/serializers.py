@@ -90,14 +90,15 @@ class ProductListSerializer(serializers.ModelSerializer):
             - w_800:   caps width at 800px — your product images don't need to
                     be larger than that for any screen, saves bandwidth
         """
-        if obj.image:
-            url = obj.image.url
+        if not obj.image:
+            return None
+        url = obj.image.url
             # Insert transformation params right after '/upload/' in the URL
             # Cloudinary URLs always have this exact segment
-            if '/upload/' in url:
+        if 'res.cloudinary.com' in url and '/upload/' in url:
                 url = url.replace('/upload/', '/upload/f_auto,q_auto,w_800/')
-            return url
-        return None
+        return url
+        
 
 
 class ProductDetailSerializer(serializers.ModelSerializer):
@@ -125,14 +126,33 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'sku', 'slug', 'created_at', 'updated_at']
 
     def get_image_url(self, obj):
-        if obj.image:
-            url = obj.image.url
+        """
+        Returns an optimized Cloudinary URL — but ONLY applies the
+        transformation string if the URL is actually a Cloudinary URL.
+
+        WHY THIS GUARD IS NECESSARY:
+        Some products were uploaded before Cloudinary was correctly
+        configured (the STORAGES dict bug) and still point to local
+        /media/ paths. Blindly inserting Cloudinary transformation
+        params into a non-Cloudinary URL produces a broken, nonsensical
+        path like ".../upload/f_auto,q_auto,w_800/v1/media/products/..."
+        which 404s because no such Cloudinary asset was ever created.
+
+        We only transform URLs that are genuinely hosted on Cloudinary's
+        domain — anything else (old local paths) is returned as-is, so
+        at minimum the existing local dev server can still serve it,
+        and we can clearly identify which products need re-uploading.
+        """
+       
+        if not obj.image:
+            return None
+        url = obj.image.url
             # Insert transformation params right after '/upload/' in the URL
             # Cloudinary URLs always have this exact segment
-            if '/upload/' in url:
+        if 'res.cloudinary.com' in url and '/upload/' in url:
                 url = url.replace('/upload/', '/upload/f_auto,q_auto,w_800/')
-            return url
-        return None
+        return url
+
 
     def get_related_products(self, obj):
         """Up to 4 other products from the same category."""
