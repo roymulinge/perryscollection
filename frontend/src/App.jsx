@@ -30,7 +30,7 @@ import AdminProductForm  from "./pages/admin/AdminProductForm";
 import AdminOrders       from "./pages/admin/AdminOrders";
 import AdminCategories   from "./pages/admin/AdminCategories";
 import InventoryDashboardPage from "./pages/InventoryDashboardPage";
-
+import ProfilePage from "./pages/ProfilePage";
 export default function App() {
   return (
     // AuthProvider first because CartProvider uses useAuth()
@@ -52,7 +52,7 @@ export default function App() {
           {/* Auth routes */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-
+          <Route path="/profile" element={<ProfilePage />} />
           {/* Protected routes — we check auth inside the component */}
           <Route path="/account" element={<AccountPage />} />
           <Route path="/orders" element={<OrdersPage />} />
