@@ -56,7 +56,10 @@ export function AuthProvider({ children }) {
     logoutApi();        // clears localStorage
     setUser(null);      // clears React state → triggers re-render
   }
-
+  
+  function updateUser(userData){
+    setUser(userData);
+  }
   // Step 3: Expose values via the context
   // Any component that calls useAuth() gets these values
   return (

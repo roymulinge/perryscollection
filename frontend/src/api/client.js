@@ -57,7 +57,7 @@ apiClient.interceptors.response.use(
         // Use a plain axios call here (not apiClient) to avoid
         // triggering the interceptor again in an infinite loop.
         const response = await axios.post(
-          "http://localhost:8000/api/auth/token/refresh/",
+          `${import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api"}/auth/token/refresh/`,
           { refresh },
           { withCredentials: true }
         );

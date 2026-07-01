@@ -46,3 +46,13 @@ export function logout() {
   localStorage.removeItem("access_token");
   localStorage.removeItem("refresh_token");
 }
+
+export async function getProfile(){
+  const response = await apiClient.get("auth/profile");
+  return response.data;
+}
+
+export async function updateProfile(data){
+  const response = await apiClient.patch("/auth/profile", data);
+  return response.data;
+}

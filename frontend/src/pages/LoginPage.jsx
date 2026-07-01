@@ -74,11 +74,8 @@ export default function LoginPage() {
 
       const isAdmin = data.user.is_staff || data.user.is_shop_owner;
 
-      if(isAdmin){
-        navigate("/admin-panel/", {replace: true} );
-      } else {
-        navigate("/", {replace: true});
-      }
+      const destination = from && from !== "/" ? from : isAdmin ? "/admin-panel" : "/";
+      navigate(destination, { replace: true });
 
 
     } catch (err) {
