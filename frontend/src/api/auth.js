@@ -48,11 +48,11 @@ export function logout() {
 }
 
 export async function getProfile(){
-  const response = await apiClient.get("auth/profile");
+  const response = await apiClient.get("/auth/profile/");
   return response.data;
 }
 
 export async function updateProfile(data){
-  const response = await apiClient.patch("/auth/profile", data);
+  const response = await apiClient.patch("/auth/profile/", data);
   return response.data;
 }

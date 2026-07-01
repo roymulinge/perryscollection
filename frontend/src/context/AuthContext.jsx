@@ -63,7 +63,7 @@ export function AuthProvider({ children }) {
   // Step 3: Expose values via the context
   // Any component that calls useAuth() gets these values
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

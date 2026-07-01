@@ -66,11 +66,7 @@ export default function LoginPage() {
         refresh: data.refresh,
       });
 
-      if (from && from !== "/") {
-        // They came from a specific URL — send them back there
-        navigate(from, { replace: true });
-        return; // stop here, don't fall through to role check
-      }
+      
 
       const isAdmin = data.user.is_staff || data.user.is_shop_owner;
 
