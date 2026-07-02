@@ -32,7 +32,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
 class Profile(models.Model):
     GENDER_CHOICES=[
-         ('male', 'Male'),
+        ('male', 'Male'),
         ('female', 'Female'),
         ('other', 'Other'),
         ('prefer_not_to_say', 'Prefer not to say'),
@@ -46,7 +46,6 @@ class Profile(models.Model):
     )
 
 
-    name = models.CharField(max_length=255, blank=True, default='')
     username = models.CharField(max_length=150, unique=True, blank=True, null=True)
     bio = models.TextField(blank=True, default='')
     profile_pic = models.ImageField(upload_to='profiles/%Y/%m/', blank=True, null=True)

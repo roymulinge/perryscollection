@@ -33,13 +33,13 @@ class RegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data.pop('password2')
         user = User.objects.create_user(**validated_data)
-        Profile.Objects.create(user=user, name=user.full_name)
+        Profile.objects.create(user=user)
         return user
 
 class ProfileSerializer(serializers.ModelSerializer):
    class Meta:
        model =Profile
-       fields = ['name', 'username', 'bio', 'profile_pic', 'phone_number', 'gender']
+       fields = ['full_name','username', 'bio', 'profile_pic', 'phone_number', 'gender']
 class UserSerializer(serializers.ModelSerializer):
     """
     Safe read-only representation of a user.
@@ -62,10 +62,16 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'email', 'full_name', 'is_staff', 'is_superuser', 'is_shop_owner', 'date_joined']
 
 class ProfileUpdateSerializer(serializers.ModelSerializer):
+
+    full_name = serializers.CharField(
+        source ='user.full_name',
+        required = False,
+        allow_blank =True
+    )
     class Meta:
         model = Profile
         fields = [
-          'name',
+          
           'full_name',
           'bio',
           'phone_number',
