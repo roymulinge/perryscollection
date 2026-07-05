@@ -37,7 +37,7 @@ export default function Navbar() {
   }, [location]);
 
   const navLinks = [
-    { label: "Shop", to: "/products" },
+    { label: "Products", to: "/products" },
     { label: "Categories", to: "/categories" },
     { label: "New Arrivals", to: "/products?featured=true" },
   ];
@@ -257,6 +257,11 @@ export default function Navbar() {
                   </div>
                   <span>{user.full_name?.split(" ")[0] || "Account"}</span>
                 </Link>
+                <Link to="/profile">
+                 <span>
+                  {user.full_name?.split(" ")[0] || "Account"}
+                 </span>
+                </Link>
                 <button className="pc-logout-btn" onClick={logout}>
                   Logout
                 </button>
@@ -271,6 +276,7 @@ export default function Navbar() {
               </>
             )}
           </div>
+          
 
           {/* ── Hamburger (mobile only) ── */}
           <button
@@ -320,6 +326,7 @@ export default function Navbar() {
               <>
                 <li><Link to="/orders"><i className="ti ti-receipt" aria-hidden="true" /> My Orders</Link></li>
                 <li><Link to="/account"><i className="ti ti-user" aria-hidden="true" /> Account</Link></li>
+                <li><Link to="/profile"><i className="ti ti-user" aria-hidden="true" /> Profile</Link></li>
                 <li><button onClick={logout}><i className="ti ti-logout" aria-hidden="true" /> Logout</button></li>
               </>
             ) : (
