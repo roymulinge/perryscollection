@@ -8,6 +8,10 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from shopping_cart.utils import Cart
+from django.conf import settings
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
+from django.contrib.auth import get_user_model
 
 # RefreshToken is how simplejwt generates token pairs:
 # RefreshToken.for_user(user) → gives you both access and refresh tokens
@@ -141,3 +145,79 @@ class ProfileAPIView(APIView):
 
         return Response(UserSerializer(request.user).data)
 
+class GoogleAuthAPIView(APIView):
+    """
+    post /api/auth/google/
+    Accecpts Google ID token from react(obtanied via google sig-in SDK)
+    verifies it with google's server,finds or create the local user 
+    and returns my own JWT pair excatly like LoginAPIView does 
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        # get credetials from google sent to react 
+        # containing the users, name, email and google user ID
+
+        credential =  request.data.get('credential')
+
+        if not credential:
+            return Response(
+                {'error': 'Google credential is required.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            #verify the credential with google's keys 
+            #id_token.verify_oauth2_token() does three things:
+            # 1. Fetches Google's Public keys(cached automatically)
+            # 2.Verifies the cryptographic signature
+            # 3 checkes token hasn't expired
+
+            google_client_id = settings.GOOGLE_CLIENT_ID
+            id_info = id_token.verify_oauth2_token(
+                credential,
+                google_requests.Request(),
+                google_client_id
+            )
+        except ValueError as e:
+            return Response(
+                {'error': 'Invalid Google token. Please try again'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        #Extract user info from the verified token 
+        #email belongs to user who clicked sign in with google
+        
+        email = id_info.get('email')
+        full_name = id_info.get('name', '')
+        google_id = id_info.get('sub')
+
+        if not email:
+            return Response(
+                {'error': 'Could nor retrieve email from google account.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Find or create the local user
+
+        User = get_user_model()
+        user, created = User.objects.get_or_create(
+            email=email,
+            defaults={
+                'full_name': full_name,
+                'is_active': True
+            }
+        )
+        if created:
+            #set unusable password so they can't accidentally login with an empty password
+            user.set_unusable_password()
+            user.save(update_fields=['password'])
+
+        refresh = RefreshToken.for_user(user)
+     
+        return Response(
+            {'user': UserSerializer(user).data,
+            'access': str(refresh.acces_token),
+            'refresh': str(refresh),
+            }
+        )

@@ -15,4 +15,5 @@ urlpatterns = [
     # GET  /api/auth/me/         → get my profile (requires token)
     path('me/', views.MeAPIView.as_view(), name='me'),
     path('profile/', views.ProfileAPIView.as_view(), name='profile'),
+    path('google/', views.GoogleAuthAPIView.as_view(), name='google-auth'),
 ]

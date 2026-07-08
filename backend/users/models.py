@@ -57,3 +57,26 @@ class Profile(models.Model):
 
     def __str__(self):
         return self.name or self.user.email
+    
+class PasswordResetCode(models.Model):
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name = "reset_code"
+    )
+
+    code = models.CharField(max_length=6)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_used = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def is_expired(self):
+        from django.utils import timezone
+        from datetime import timedelta
+
+        return timezone.now() > self.created_at + timedelta(minutes=10)
+    
