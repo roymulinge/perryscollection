@@ -217,7 +217,7 @@ class GoogleAuthAPIView(APIView):
      
         return Response(
             {'user': UserSerializer(user).data,
-            'access': str(refresh.acces_token),
+            'access': str(refresh.access_token),
             'refresh': str(refresh),
             }
         )

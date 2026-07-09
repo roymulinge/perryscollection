@@ -32,6 +32,7 @@ import AdminCategories   from "./pages/admin/AdminCategories";
 import InventoryDashboardPage from "./pages/InventoryDashboardPage";
 import ProfilePage from "./pages/ProfilePage";
 export default function App() {
+
   return (
     // AuthProvider first because CartProvider uses useAuth()
     <AuthProvider>

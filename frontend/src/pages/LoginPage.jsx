@@ -14,6 +14,8 @@ import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { login } from "../api/auth";
 import { useAuth } from "../context/AuthContext";
+import { GoogleLogin } from '@react-oauth/google';
+import { googleLogin } from '../api/auth';
 
 export default function LoginPage() {
   const navigate  = useNavigate();
@@ -84,6 +86,30 @@ export default function LoginPage() {
       // always runs — whether try succeeded or catch ran
       setLoading(false);
     }
+  }
+
+  async function handleGoogleSuccess(credentialResponse) {
+  // credentialResponse.credential is the ID token Google returned
+  // We send it straight to our backend for verification
+    try {
+      const data = await googleLogin(credentialResponse.credential);
+      // Same setAuth call as email/password login — tokens are tokens
+      setAuth(data.user, {
+        access: data.access,
+        refresh: data.refresh,
+      });
+      const isAdmin = data.user.is_staff || data.user.is_shop_owner;
+      const destination = from && from !== '/' ? from : isAdmin ? '/admin-panel' : '/';
+      navigate(destination, { replace: true });
+    } catch (err) {
+      setError('Google sign-in failed. Please try again.');
+    }
+  }
+
+  function handleGoogleError() {
+    // Google's SDK calls this if the user closes the popup or
+    // if there's a network error before your backend is even called
+    setError('Google sign-in was cancelled or failed.');
   }
 
   return (
@@ -202,6 +228,21 @@ export default function LoginPage() {
           </form>
 
           <div className="auth-divider"><span>or</span></div>
+
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
+              useOneTap={false}
+              // useOneTap: Google's "one tap" auto-login popup. Setting false
+              // means the user must explicitly click the button — better UX
+              // for a login page where you want intentional action
+              shape="rectangular"
+              theme="filled_black"
+              text="continue_with"
+              size="large"
+            />
+          </div>
 
           <p className="auth-footer">
             Don't have an account? <Link to="/register">Create one</Link>

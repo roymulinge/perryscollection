@@ -56,3 +56,13 @@ export async function updateProfile(data){
   const response = await apiClient.patch("/auth/profile/", data);
   return response.data;
 }
+
+/**
+ * Exchange a Google ID token for your own JWT pair.
+ * @param {string} credential - The ID token Google returned to React
+ * @returns {{ user, access, refresh }}
+ */
+export async function googleLogin(credential) {
+  const response = await apiClient.post('/auth/google/', { credential });
+  return response.data;
+}
