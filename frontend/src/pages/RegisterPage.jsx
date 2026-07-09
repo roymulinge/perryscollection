@@ -84,13 +84,25 @@ export default function RegisterPage() {
         access: data.access,
         refresh: data.refresh,
       });
+      const isNewUser = !data.user.profile?.phone_number && 
+                      !data.user.profile?.bio &&
+                      !data.user.profile?.username;
+
       const isAdmin = data.user.is_staff || data.user.is_shop_owner;
-      const destination = from && from !== '/' ? from : isAdmin ? '/admin-panel' : '/';
-      navigate(destination, { replace: true });
-    } catch (err) {
-      setError('Google sign-in failed. Please try again.');
+     if (isAdmin) {
+      navigate('/admin-panel', { replace: true });
+    } else if (isNewUser) {
+      // New Google user — complete your profile first
+      navigate('/profile', { replace: true });
+    } else {
+      // Returning Google user — go to products
+      navigate('/', { replace: true });
     }
+
+  } catch (err) {
+    setError('Google sign-in failed. Please try again.');
   }
+}
 
   function handleGoogleError() {
     // Google's SDK calls this if the user closes the popup or
