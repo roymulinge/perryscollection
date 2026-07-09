@@ -1,5 +1,5 @@
 from django.db import models
-
+import random
 # Create your models here.
 from .managers import CustomUserManager
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
@@ -80,3 +80,11 @@ class PasswordResetCode(models.Model):
 
         return timezone.now() > self.created_at + timedelta(minutes=10)
     
+    @classmethod
+    def generate_code(cls):
+        # 6-digit code: 000000 to 999999
+        # zfill(6) pads with leading zeros so '1234' becomes '001234'
+        return str(random.randint(0, 999999)).zfill(6)
+
+    def __str__(self):
+        return f"Reset code for {self.user.email} ({'used' if self.is_used else 'active'})"

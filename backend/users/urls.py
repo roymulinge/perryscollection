@@ -16,4 +16,7 @@ urlpatterns = [
     path('me/', views.MeAPIView.as_view(), name='me'),
     path('profile/', views.ProfileAPIView.as_view(), name='profile'),
     path('google/', views.GoogleAuthAPIView.as_view(), name='google-auth'),
+    path('forgot-password/', views.ForgotPasswordAPIView.as_view(), name='forgot-password'),
+    path('verify-reset-code/', views.VerifyResetCodeAPIView.as_view(), name='verify-reset-code'),
+    path('reset-password/', views.ResetPasswordAPIView.as_view(), name='reset-password'),
 ]

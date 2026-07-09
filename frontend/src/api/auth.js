@@ -66,3 +66,20 @@ export async function googleLogin(credential) {
   const response = await apiClient.post('/auth/google/', { credential });
   return response.data;
 }
+
+export async function forgotPassword(email) {
+  const response = await apiClient.post('/auth/forgot-password/', { email });
+  return response.data;
+}
+
+export async function verifyResetCode(email, code) {
+  const response = await apiClient.post('/auth/verify-reset-code/', { email, code });
+  return response.data;
+}
+
+export async function resetPassword(reset_token, password, password2) {
+  const response = await apiClient.post('/auth/reset-password/', {
+    reset_token, password, password2
+  });
+  return response.data;
+}
