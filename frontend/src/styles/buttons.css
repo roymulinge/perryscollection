@@ -1,0 +1,44 @@
+.btn-molten {
+  margin-top: 8px;
+  width: 100%;
+  height: 52px;
+  padding: 0 28px;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: #fdf6ea;
+  background: linear-gradient(120deg, #8b5e1a, #c49448, #e8c87a, #c49448, #8b5e1a);
+  background-size: 300% 100%;
+  background-position: 0% 50%;
+  transition: background-position 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s ease;
+}
+
+.btn-molten:hover { background-position: 100% 50%; }
+.btn-molten:active { transform: scale(0.97); }
+.btn-molten:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+.btn-outline {
+  height: 52px;
+  padding: 0 28px;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: #8b5e1a;
+  background: #ffffff;
+  transition: opacity 0.2s ease, transform 0.15s ease;
+}
+.btn-outline-shimmer{
+    border:1.5px solid #c49448;
+    
+}
+.btn-outline:hover { opacity: 0.85; }
+.btn-outline:active { transform: scale(0.97); }
+.btn-outline:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }

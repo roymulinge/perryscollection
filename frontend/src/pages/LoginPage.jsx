@@ -16,7 +16,7 @@ import { login } from "../api/auth";
 import { useAuth } from "../context/AuthContext";
 import { GoogleLogin } from '@react-oauth/google';
 import { googleLogin } from '../api/auth';
-
+import Button from "../components/Button";
 export default function LoginPage() {
   const navigate  = useNavigate();
   const location  = useLocation();
@@ -170,6 +170,7 @@ export default function LoginPage() {
         .auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: rgba(196,148,72,0.25); }
         .auth-divider span { font-size: 12px; color: #b08a54; }
         @media (max-width: 520px) { .auth-card { padding: 32px 24px; } }
+
       `}</style>
 
       <div className="auth-page">
@@ -241,11 +242,10 @@ export default function LoginPage() {
               />
             </div>
             
-
-            <button type="submit" className="auth-btn" disabled={loading}>
-              {/* Ternary: if loading show "Signing in…" else show "Sign in" */}
-              {loading ? "Signing in…" : "Sign in"}
-            </button>
+            <Button variant="molten" onclick={handleSubmit} disabled={loading}>
+               {loading? "Login in 👍": "Log in 🛒"}
+            </Button>
+            
           </form>
 
           <div className="auth-divider"><span>or</span></div>
