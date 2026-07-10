@@ -41,6 +41,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState("");
 
+  const successMessage = location.state?.message;
   function handleChange(e) {
     // [e.target.name]: computed property key.
     // One handler for all fields. When name="email", updates form.email.
@@ -185,7 +186,20 @@ export default function LoginPage() {
           {/* Only render the error div when there IS an error.
               role="alert" makes screen readers announce it immediately. */}
           {error && <div className="auth-error" role="alert">{error}</div>}
-
+                 {successMessage && (
+                  <div style={{
+                    background: 'rgba(34,197,94,0.08)',
+                    border: '1px solid rgba(34,197,94,0.25)',
+                    color: '#86efac',
+                    padding: '12px 16px',
+                    borderRadius: '10px',
+                    fontSize: '14px',
+                    marginBottom: '20px',
+                    textAlign: 'center',
+                  }} role="status">
+                    {successMessage}
+                  </div>
+                )}
           {/* noValidate: disables browser's built-in validation popups
               so we can control the error display ourselves */}
           <form onSubmit={handleSubmit} noValidate>
@@ -208,6 +222,12 @@ export default function LoginPage() {
 
             <div className="auth-field">
               <label className="auth-label" htmlFor="password">Password</label>
+              <Link
+                to="/forgot-password"
+                style={{ fontSize: '12px', color: '#c49448', textDecoration: 'none' }}
+              >
+                Forgot password?
+              </Link>
               <input
                 id="password"
                 className="auth-input"
@@ -220,6 +240,7 @@ export default function LoginPage() {
                 autoComplete="current-password"
               />
             </div>
+            
 
             <button type="submit" className="auth-btn" disabled={loading}>
               {/* Ternary: if loading show "Signing in…" else show "Sign in" */}
@@ -248,6 +269,7 @@ export default function LoginPage() {
             Don't have an account? <Link to="/register">Create one</Link>
           </p>
         </div>
+        
       </div>
     </>
   );
