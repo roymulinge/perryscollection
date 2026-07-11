@@ -8,6 +8,10 @@ import { Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
 
+// Route guards — new
+import PrivateRoute from "./components/PrivateRoute";
+import AdminRoute   from "./components/AdminRoute";
+
 // Layout components
 import NavBar from "./components/NavBar";
 import Footer from "./components/Footer";
@@ -34,6 +38,7 @@ import AdminOrders       from "./pages/admin/AdminOrders";
 import AdminCategories   from "./pages/admin/AdminCategories";
 import InventoryDashboardPage from "./pages/InventoryDashboardPage";
 import ProfilePage from "./pages/ProfilePage";
+
 export default function App() {
 
   return (
@@ -51,7 +56,9 @@ export default function App() {
           {/* ↑ Categories list reuses ProductsPage with no filter */}
           <Route path="/categories/:slug" element={<CategoryPage />} />
           <Route path="/cart" element={<CartPage />} />
-          <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/checkout" element={
+            <PrivateRoute><CheckoutPage /></PrivateRoute>
+          } />
 
           {/* Auth routes */}
           <Route path="/login" element={<LoginPage />} />
@@ -59,22 +66,37 @@ export default function App() {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/verify-code"     element={<VerifyCodePage />} />
           <Route path="/reset-password"  element={<ResetPasswordPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/profile" element={ <PrivateRoute><ProfilePage /></PrivateRoute>} />
           {/* Protected routes — we check auth inside the component */}
-          <Route path="/account" element={<AccountPage />} />
-          <Route path="/orders" element={<OrdersPage />} />
+          <Route path="/account" element={<PrivateRoute><AccountPage /></PrivateRoute>} />
+           <Route path="/orders" element={
+            <PrivateRoute><OrdersPage /></PrivateRoute>
+          } />
 
           {/* Catch-all 404 */}
           <Route path="*" element={<NotFoundPage />} />
 
-          <Route path="/admin-panel/"                         element={<AdminDashboard />}   />
-          <Route path="/admin-panel/products"                element={<AdminProducts />}    />
-          <Route path="/admin-panel/products/new"            element={<AdminProductForm />} />
-          <Route path="/admin-panel/products/:id/edit"       element={<AdminProductForm />} />
-          <Route path="/admin-panel/orders"                  element={<AdminOrders />}      />
-          <Route path="/admin-panel/categories"              element={<AdminCategories />}  />
-
-          <Route path="/inventory"                           element={<InventoryDashboardPage />} />
+          <Route path="/admin-panel/" element={
+            <AdminRoute><AdminDashboard /></AdminRoute>
+          } />
+          <Route path="/admin-panel/products" element={
+            <AdminRoute><AdminProducts /></AdminRoute>
+          } />
+          <Route path="/admin-panel/products/new" element={
+            <AdminRoute><AdminProductForm /></AdminRoute>
+          } />
+          <Route path="/admin-panel/products/:id/edit" element={
+            <AdminRoute><AdminProductForm /></AdminRoute>
+          } />
+          <Route path="/admin-panel/orders" element={
+            <AdminRoute><AdminOrders /></AdminRoute>
+          } />
+          <Route path="/admin-panel/categories" element={
+            <AdminRoute><AdminCategories /></AdminRoute>
+          } />
+          <Route path="/inventory" element={
+            <AdminRoute><InventoryDashboardPage /></AdminRoute>
+          } />
         </Routes>
 
         <Footer />
