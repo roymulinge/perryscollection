@@ -1,6 +1,7 @@
 # users/views.py
 
-
+from django_ratelimit.decorators import ratelimit
+from django.utils.decorators import method_decorator
 from django.http import HttpResponse
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -48,7 +49,10 @@ class RegisterAPIView(APIView):
             'refresh': str(refresh),
         }, status=status.HTTP_201_CREATED)
 
-
+@method_decorator(
+    ratelimit(key='ip', rate='5/m', method='POST', block=True),
+    name='dispatch'
+)
 class LoginAPIView(APIView):
     """
     POST /api/auth/login/
@@ -223,7 +227,10 @@ class GoogleAuthAPIView(APIView):
             'refresh': str(refresh),
             }
         )
-    
+@method_decorator(
+    ratelimit(key='ip', rate='3/m', method='POST', block=True),
+    name='dispatch'
+)
 class ForgotPasswordAPIView(APIView):
     """
     POST /api/auth/forgot-password/
@@ -302,7 +309,10 @@ class ForgotPasswordAPIView(APIView):
             'message': 'If this email is registered, you will receive a reset code.'
         })
 
-
+@method_decorator(
+    ratelimit(key='ip', rate='3/m', method='POST', block=True),
+    name='dispatch'
+)
 class VerifyResetCodeAPIView(APIView):
     """
     POST /api/auth/verify-reset-code/

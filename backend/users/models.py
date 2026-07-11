@@ -11,7 +11,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(auto_now_add=True)
-
+    is_email_verified = models.BooleanField(default=False)
     full_name = models.CharField(max_length=255, blank=True, default='')
     is_shop_owner = models.BooleanField(default=False)
 
