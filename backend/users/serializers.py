@@ -47,6 +47,12 @@ class UserSerializer(serializers.ModelSerializer):
     """
 
     profile = ProfileSerializer(read_only=True)
+
+    has_usable_password = serializers.SerializerMethodField()
+
+    def get_has_usable_password(self, obj):
+        return obj.has_usable_password()
+    
     class Meta:
         model = User
         fields = [

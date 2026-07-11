@@ -83,3 +83,17 @@ export async function resetPassword(reset_token, password, password2) {
   });
   return response.data;
 }
+
+/**
+ * Permanently delete the authenticated user's account.
+ * @param {string|null} password - Required for email users, null for Google users
+ * @param {boolean} confirmed - Required for Google users instead of password
+ */
+export async function deleteAccount(password = null, confirmed = false) {
+  // axios DELETE with a body requires the `data` key
+  // unlike POST/PATCH which accept the body directly
+  const response = await apiClient.delete('/auth/delete-account/', {
+    data: password ? { password } : { confirmed }
+  });
+  return response.data;
+}

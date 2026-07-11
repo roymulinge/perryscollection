@@ -464,3 +464,45 @@ class ResetPasswordAPIView(APIView):
         return Response({
             'message': 'Password reset successfully. You can now log in.'
         })
+    
+class DeleteAccountAPIView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request):
+        password = request.data.get('password', '').strip()
+        user = request.user
+
+        if not user.has_usable_password():
+            confirmed = request.data.get('confirmed', False)
+            if not confirmed:
+                return Response(
+                    {
+                        'error': 'Please confirm deletion.',
+                        'google_account': True,
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            else:
+                if not password:
+                    return Response(
+                        {'error': 'Password is required to delete your account.'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                
+                if not user.check_password(password):
+                    return Response(
+                        {'error': 'Incorrect password.'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                
+                email = user.email
+
+                user.delete()
+
+        return Response(
+            {
+                'message': f'Account for {email} has been permanently deleted.'
+            },
+            status=status.HTTP_200_OK
+        )

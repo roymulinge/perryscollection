@@ -3,11 +3,12 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { updateProfile } from "../api/auth";
+import { deleteAccount } from '../api/auth';
 
 export default function ProfilePage() {
   // Pull user (current data) and updateUser (to refresh context after save)
   // from AuthContext — same context LoginPage uses, but different fields
-  const { user, updateUser } = useAuth();
+
 
   const [form, setForm] = useState({
     full_name: "",
@@ -23,7 +24,12 @@ export default function ProfilePage() {
   const [error, setError]     = useState("");
   const [success, setSuccess] = useState(false);
   // success: shows a "Saved!" message after a successful PATCH
-
+  const { user, updateUser, logout } = useAuth();
+  const navigate = useNavigate();
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteLoading, setDeleteLoading]   = useState(false);
+  const [deleteError, setDeleteError]       = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   useEffect(() => {
     // When the user object is available in context, pre-fill the form.
     // Without this, the form always starts blank and the first Save
@@ -89,6 +95,31 @@ export default function ProfilePage() {
       }
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleDeleteAccount(e) {
+    e.preventDefault();
+    setDeleteLoading(true);
+    setDeleteError('');
+
+    try {
+      if (user.has_usable_password) {
+        // Email/password user — send password
+        await deleteAccount(deletePassword, false);
+      } else {
+        // Google user — send confirmed flag
+        await deleteAccount(null, true);
+      }
+      logout();
+      navigate('/', { replace: true });
+    } catch (err) {
+      setDeleteError(
+        err.response?.data?.error ||
+        'Failed to delete account. Please try again.'
+      );
+    } finally {
+      setDeleteLoading(false);
     }
   }
 
@@ -185,6 +216,135 @@ export default function ProfilePage() {
             <button type="submit" className="profile-btn" disabled={loading}>
               {loading ? "Saving…" : "Save changes"}
             </button>
+            {/* ── Danger Zone ── */}
+            <div style={{
+              marginTop: '48px',
+              paddingTop: '32px',
+              borderTop: '1px solid rgba(239,68,68,0.15)',
+            }}>
+              <h2 style={{
+                fontFamily: 'Georgia, serif',
+                fontSize: '1.1rem',
+                fontWeight: 400,
+                color: '#fca5a5',
+                margin: '0 0 8px',
+              }}>
+                Danger zone
+              </h2>
+              <p style={{
+                fontSize: '13px',
+                color: '#7a5e3a',
+                margin: '0 0 20px',
+                lineHeight: 1.5,
+              }}>
+                Permanently delete your account and all associated data.
+                This action cannot be undone.
+              </p>
+
+              {/* Show confirmation form only after clicking the button */}
+              {!showDeleteConfirm ? (
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  style={{
+                    background: 'transparent',
+                    border: '1px solid rgba(239,68,68,0.4)',
+                    color: '#fca5a5',
+                    padding: '10px 20px',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  Delete my account
+                </button>
+              ) : (
+                <form onSubmit={handleDeleteAccount}>
+                  <p style={{
+                    fontSize: '13px',
+                    color: '#fca5a5',
+                    marginBottom: '16px',
+                    fontWeight: 600,
+                  }}>
+                    Are you sure? This is permanent and cannot be undone.
+                  </p>
+
+                  {/* Only show password field for non-Google users */}
+                  {user.has_usable_password && (
+                    <div style={{ marginBottom: '16px' }}>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        color: '#9a7a4a',
+                        letterSpacing: '0.08em',
+                        textTransform: 'uppercase',
+                        marginBottom: '7px',
+                      }}>
+                        Confirm your password
+                      </label>
+                      <input
+                        type="password"
+                        className="profile-input"
+                        placeholder="Enter your password to confirm"
+                        value={deletePassword}
+                        onChange={(e) => setDeletePassword(e.target.value)}
+                        autoComplete="current-password"
+                      />
+                    </div>
+                  )}
+
+                  {deleteError && (
+                    <div className="profile-error" role="alert" style={{ marginBottom: '16px' }}>
+                      {deleteError}
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <button
+                      type="submit"
+                      disabled={deleteLoading}
+                      style={{
+                        flex: 1,
+                        height: '48px',
+                        border: 'none',
+                        borderRadius: '8px',
+                        background: '#dc2626',
+                        color: '#fff',
+                        fontSize: '14px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        opacity: deleteLoading ? 0.6 : 1,
+                      }}
+                    >
+                      {deleteLoading ? 'Deleting…' : 'Yes, delete my account'}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowDeleteConfirm(false);
+                        setDeletePassword('');
+                        setDeleteError('');
+                      }}
+                      style={{
+                        flex: 1,
+                        height: '48px',
+                        border: '1px solid rgba(196,148,72,0.2)',
+                        borderRadius: '8px',
+                        background: 'transparent',
+                        color: '#9a7a4a',
+                        fontSize: '14px',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
           </form>
         </div>
       </div>
