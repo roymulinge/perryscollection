@@ -1,36 +1,17 @@
-# products/admin_views.py
-# ─────────────────────────────────────────────────────────────────
-# All admin API views.
-#
-# PATTERN USED: APIView from DRF
-# Each class handles one URL endpoint.
-# get()    → list or retrieve
-# post()   → create
-# put()    → full update
-# patch()  → partial update (only send changed fields)
-# delete() → delete
-#
-# ALL views require IsShopAdmin — regular users get 403 immediately.
-# ─────────────────────────────────────────────────────────────────
-
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-# MultiPartParser: parses multipart/form-data (used for file uploads)
-# FormParser:      parses application/x-www-form-urlencoded
-# JSONParser:      parses application/json
-# We need all three because the product form sends files + fields together
 
+from django.core.exceptions import ValidationError
 from django.db import models as django_models
-from django.db.models import Sum, Count, Q
-# Sum, Count: SQL aggregate functions
-# Q: lets us combine WHERE clauses with OR (|) or AND (&)
+from django.db.models import Sum, Q
 
-from django.utils.text import slugify
 
 from .models import Product, Category
 from .permissions import IsShopAdmin
+from .pagination import get_page_number
+
 from .admin_serializers import (
     AdminProductSerializer,
     AdminCategorySerializer,
@@ -110,10 +91,16 @@ class AdminProductListView(APIView):
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get(self, request):
-        queryset = Product.objects.select_related('category').order_by('-created_at')
+        queryset = Product.objects.select_related(
+            'category'
+        ).order_by('-created_at')
 
-        # Search: ?q=boots
+        # -------------------------
+        # Search
+        # -------------------------
+
         q = request.query_params.get('q', '').strip()
+
         if q:
             queryset = queryset.filter(
                 Q(name__icontains=q) |
@@ -121,43 +108,73 @@ class AdminProductListView(APIView):
                 Q(description__icontains=q)
             )
 
-        # Filter by category: ?category=1
-        category_id = request.query_params.get('category')
-        if category_id:
-            queryset = queryset.filter(category_id=category_id)
+        # -------------------------
+        # Category filter
+        # -------------------------
 
-        # Filter by stock status: ?stock=low | ?stock=out
+        category_id = request.query_params.get('category')
+
+        if category_id:
+            queryset = queryset.filter(
+                category_id=category_id
+            )
+
+        # -------------------------
+        # Stock filter
+        # -------------------------
+
         stock_filter = request.query_params.get('stock')
+
         if stock_filter == 'low':
             queryset = queryset.filter(
                 stock__gt=0,
                 stock__lte=django_models.F('low_stock_threshold')
             )
-        elif stock_filter == 'out':
-            queryset = queryset.filter(stock=0)
 
-        # Pagination
-        page = max(1, int(request.query_params.get('page', 1)))
+        elif stock_filter == 'out':
+            queryset = queryset.filter(
+                stock=0
+            )
+
+        # -------------------------
+        # Pagination validation
+        # -------------------------
+
+        try:
+            page = get_page_number(request)
+        except ValidationError as exc:
+            return Response(
+                {'error': str(exc)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         page_size = 20
+
         start = (page - 1) * page_size
+        end = start + page_size
+
         total = queryset.count()
+        paginated = queryset[start:end]
+
+        total_pages = (total + page_size - 1) // page_size
 
         serializer = AdminProductSerializer(
-            queryset[start:start + page_size],
+            paginated,
             many=True,
-            context={'request': request}
+            context={'request': request},
         )
 
         return Response({
             'products': serializer.data,
+
             'pagination': {
                 'page': page,
                 'page_size': page_size,
                 'total': total,
-                'total_pages': max(1, -(-total // page_size)),  # ceiling division
-                'has_next': start + page_size < total,
+                'total_pages': total_pages,
+                'has_next': end < total,
                 'has_previous': page > 1,
-            }
+            },
         })
 
     def post(self, request):
@@ -360,39 +377,69 @@ class AdminOrderListView(APIView):
     def get(self, request):
         from checkout.models import Order
 
-        queryset = Order.objects.prefetch_related('items__product').order_by('-created_at')
-        # prefetch_related: fetches all related items in 1 extra query
-        # instead of 1 query PER order (N+1 problem)
-        # items__product: also pre-fetches the product on each item
+        queryset = Order.objects.prefetch_related(
+            'items__product'
+        ).order_by('-created_at')
 
-        # Filter by status: ?status=pending
+        # -------------------------
+        # Status filter
+        # -------------------------
+
         order_status = request.query_params.get('status')
-        if order_status:
-            queryset = queryset.filter(status=order_status)
 
-        # Search by customer email or name: ?q=jane
-        q = request.query_params.get('q', '').strip()
-        if q:
+        if order_status:
             queryset = queryset.filter(
-                Q(email__icontains=q) | Q(full_name__icontains=q)
+                status=order_status
             )
 
-        page = max(1, int(request.query_params.get('page', 1)))
+        # -------------------------
+        # Search
+        # -------------------------
+
+        q = request.query_params.get('q', '').strip()
+
+        if q:
+            queryset = queryset.filter(
+                Q(email__icontains=q) |
+                Q(full_name__icontains=q)
+            )
+
+        # -------------------------
+        # Pagination validation
+        # -------------------------
+
+        try:
+            page = get_page_number(request)
+        except ValidationError as exc:
+            return Response(
+                {'error': str(exc)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         page_size = 25
+
         start = (page - 1) * page_size
+        end = start + page_size
+
         total = queryset.count()
+        paginated = queryset[start:end]
+
+        total_pages = (total + page_size - 1) // page_size
 
         return Response({
             'orders': AdminOrderSerializer(
-                queryset[start:start + page_size],
-                many=True
+                paginated,
+                many=True,
             ).data,
+
             'pagination': {
-                'page': page, 'total': total,
-                'total_pages': max(1, -(-total // page_size)),
-                'has_next': start + page_size < total,
+                'page': page,
+                'page_size': page_size,
+                'total': total,
+                'total_pages': total_pages,
+                'has_next': end < total,
                 'has_previous': page > 1,
-            }
+            },
         })
 
 

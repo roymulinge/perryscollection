@@ -1,4 +1,3 @@
-
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -14,35 +13,7 @@ from .serializers import (
     ProductDetailSerializer,
     CategorySerializer,
 )
-
-
-def get_valid_page(request):
-    """
-    Read and validate the page query parameter.
-
-    Valid:
-        ?page=1
-        ?page=2
-        ?page=10
-
-    Invalid:
-        ?page=0
-        ?page=-1
-        ?page=abc
-        ?page=
-    """
-
-    page_param = request.query_params.get('page', '1')
-
-    try:
-        page = int(page_param)
-    except (TypeError, ValueError):
-        raise ValidationError("Page must be a positive integer.")
-
-    if page < 1:
-        raise ValidationError("Page must be a positive integer.")
-
-    return page
+from .pagination import get_page_number
 
 
 class HomeAPIView(APIView):
@@ -121,13 +92,21 @@ class CategoryDetailAPIView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
+        # -------------------------
+        # Pagination validation
+        # -------------------------
+
         try:
-            page = get_valid_page(request)
+            page = get_page_number(request)
         except ValidationError as exc:
             return Response(
-                {'error': str(exc.message)},
+                {'error': str(exc)},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        # -------------------------
+        # Products
+        # -------------------------
 
         products = Product.objects.filter(
             category=category,
@@ -216,10 +195,10 @@ class ProductListAPIView(APIView):
         # -------------------------
 
         try:
-            page = get_valid_page(request)
+            page = get_page_number(request)
         except ValidationError as exc:
             return Response(
-                {'error': str(exc.message)},
+                {'error': str(exc)},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -284,4 +263,3 @@ class ProductDetailAPIView(APIView):
         )
 
         return Response(serializer.data)
-
