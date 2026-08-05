@@ -90,7 +90,9 @@ function ProductCard({ product }) {
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+
     >
+      |
       {/* ── Image area ── */}
       <div style={{
         aspectRatio: "4/5",

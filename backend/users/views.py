@@ -66,7 +66,7 @@ class LoginAPIView(APIView):
 
         # We can't use Django's authenticate() directly with email
         # because it defaults to username. We look up the user manually.
-        from django.contrib.auth import get_user_model
+        
         User = get_user_model()
 
         try:

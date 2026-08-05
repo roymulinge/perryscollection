@@ -20,12 +20,13 @@
 from decimal import Decimal
 from django.conf import settings
 from products.models import Product
-
+from .models import Cart, CartItem
 
 class Cart:
     """Session-based cart manager for API usage."""
 
     def __init__(self, request):
+        self.request = request.data
         self.session = request.session
         cart = self.session.get(settings.CART_SESSION_ID)
         if not cart:
