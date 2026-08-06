@@ -36,7 +36,7 @@ SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 
 CORS_ALLOWED_ORIGINS =[
-    'https://perryscollection-nine.vercel.app/',#Vercel/Netlify Url
+    'perryscollection-nine.vercel.app',#Vercel/Netlify Url
 ]
 
 CORS_ALLOW_CREDENTIALS = True
