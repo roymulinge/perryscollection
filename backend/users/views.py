@@ -50,7 +50,7 @@ class RegisterAPIView(APIView):
         }, status=status.HTTP_201_CREATED)
 
 @method_decorator(
-    ratelimit(key='ip', rate='5/m', method='POST', block=True),
+    ratelimit(key='ip', rate=None if getattr(settings, "TESTING", False) else "5/m", method='POST', block=True),
     name='dispatch'
 )
 class LoginAPIView(APIView):
@@ -75,11 +75,7 @@ class LoginAPIView(APIView):
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
-        if not user.is_active:
-            return Response(
-                {"error": "This account has been disabled."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+       
 
         pre_login_cart_data = dict(request.session.get("cart", {}))
 
