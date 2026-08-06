@@ -14,7 +14,9 @@ ALLOWED_HOSTS =['perryscollection.onrender.com']
 #PostgreSQL configuration via environment variables
 
 DATABASES = {
-    'default': dj_database_url.config(default=os.environ.get('DATABASE_URL'))
+    "default": dj_database_url.parse(
+        os.environ["DATABASE_URL"]
+    )
 }
 
 # settings.py
@@ -34,7 +36,7 @@ SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 
 CORS_ALLOWED_ORIGINS =[
-    '',#Vercel/Netlify Url
+    'https://perryscollection-d1a5.vercel.app/',#Vercel/Netlify Url
 ]
 
 CORS_ALLOW_CREDENTIALS = True
