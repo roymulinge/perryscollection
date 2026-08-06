@@ -24,7 +24,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.environ.get('DB_NAME', 'perrys_db'),      # fallback to your dev DB name
         'USER': os.environ.get('DB_USER', 'ROY'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', 'Destroy$6978'),
+        'PASSWORD': os.environ.get('DB_PASSWORD',),
         'HOST': os.environ.get('DB_HOST', 'localhost'),
         'PORT': os.environ.get('DB_PORT', '5432'),
     }

@@ -6,8 +6,6 @@ from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.conf import settings
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
-    username = models.CharField(unique=True, max_length=150, blank=True, null=True)
-    phone_number = models.CharField(max_length=15, blank=True, default='')
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(auto_now_add=True)
@@ -56,7 +54,7 @@ class Profile(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.name or self.user.email
+        return self.full_name or self.user.email
     
 class PasswordResetCode(models.Model):
 

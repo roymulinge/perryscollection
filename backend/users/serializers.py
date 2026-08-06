@@ -35,6 +35,15 @@ class RegisterSerializer(serializers.ModelSerializer):
         user = User.objects.create_user(**validated_data)
         Profile.objects.create(user=user)
         return user
+class LoginSerializer(serializers.Serializer):
+     email = serializers.EmailField()
+     password = serializers.CharField(
+         write_only=True,
+         trim_whitespace=False,
+         style={"input_type": "password"},
+         )
+     def validate_email(self,value):
+         return value.strip().lower()
 
 class ProfileSerializer(serializers.ModelSerializer):
    class Meta:
@@ -59,6 +68,7 @@ class UserSerializer(serializers.ModelSerializer):
             'id',
             'email',
             'full_name',
+            'has_usable_password',
             'is_staff',       # ← ADDED: AdminLayout needs this
             'is_superuser',   # ← ADDED: useful for future checks
             'is_shop_owner',

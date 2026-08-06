@@ -18,8 +18,8 @@ from django.conf import settings as django_settings
 from .models import PasswordResetCode
 # RefreshToken is how simplejwt generates token pairs:
 # RefreshToken.for_user(user) → gives you both access and refresh tokens
-
-from .serializers import RegisterSerializer, UserSerializer, ProfileUpdateSerializer
+from django.contrib.auth import authenticate
+from .serializers import RegisterSerializer, UserSerializer, ProfileUpdateSerializer, LoginSerializer
 from .models import Profile
 
 
@@ -54,54 +54,45 @@ class RegisterAPIView(APIView):
     name='dispatch'
 )
 class LoginAPIView(APIView):
-    """
-    POST /api/auth/login/
-    Returns JWT tokens on valid credentials.
-    """
     permission_classes = [AllowAny]
 
     def post(self, request):
-        email = request.data.get('email', '').strip().lower()
-        password = request.data.get('password', '')
+        serializer = LoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-        # We can't use Django's authenticate() directly with email
-        # because it defaults to username. We look up the user manually.
-        
-        User = get_user_model()
+        email = serializer.validated_data['email']
+        password = serializer.validated_data["password"]
 
-        try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
-            # Same error for wrong email or wrong password — don't reveal which
+        user = authenticate(
+            request,
+            email=email,
+            password=password
+        )
+
+        if user is None:
             return Response(
-                {'error': 'Invalid email or password.'},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
-
-        # check_password() compares plain text against the hashed password
-        if not user.check_password(password):
-            return Response(
-                {'error': 'Invalid email or password.'},
-                status=status.HTTP_401_UNAUTHORIZED
+                {"error": "Invalid email or password."},
+                status=status.HTTP_401_UNAUTHORIZED,
             )
 
         if not user.is_active:
             return Response(
-                {'error': 'This account has been disabled.'},
-                status=status.HTTP_403_FORBIDDEN
+                {"error": "This account has been disabled."},
+                status=status.HTTP_403_FORBIDDEN,
             )
-        pre_login_cart_data = dict(request.session.get('cart', {}))
+
+        pre_login_cart_data = dict(request.session.get("cart", {}))
 
         refresh = RefreshToken.for_user(user)
-     
+
         if pre_login_cart_data:
-            request.session['cart'] = pre_login_cart_data
+            request.session["cart"] = pre_login_cart_data
             request.session.modified = True
 
         return Response({
-            'user': UserSerializer(user).data,
-            'access': str(refresh.access_token),
-            'refresh': str(refresh),
+            "user": UserSerializer(user).data,
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
         })
 
 
@@ -466,43 +457,50 @@ class ResetPasswordAPIView(APIView):
         })
     
 class DeleteAccountAPIView(APIView):
-
     permission_classes = [IsAuthenticated]
 
     def delete(self, request):
-        password = request.data.get('password', '').strip()
         user = request.user
 
+        # Google-only account (no usable password)
         if not user.has_usable_password():
-            confirmed = request.data.get('confirmed', False)
-            if not confirmed:
+            confirmed = request.data.get("confirmed")
+
+            if confirmed is not True:
                 return Response(
                     {
-                        'error': 'Please confirm deletion.',
-                        'google_account': True,
+                        "error": "Please confirm account deletion.",
+                        "google_account": True,
                     },
-                    status=status.HTTP_400_BAD_REQUEST
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
-            else:
-                if not password:
-                    return Response(
-                        {'error': 'Password is required to delete your account.'},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-                
-                if not user.check_password(password):
-                    return Response(
-                        {'error': 'Incorrect password.'},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-                
-                email = user.email
 
-                user.delete()
+        # Email/password account
+        else:
+            password = request.data.get("password", "").strip()
+
+            if not password:
+                return Response(
+                    {
+                        "error": "Password is required to delete your account."
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            if not user.check_password(password):
+                return Response(
+                    {
+                        "error": "Incorrect password."
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        email = user.email
+        user.delete()
 
         return Response(
             {
-                'message': f'Account for {email} has been permanently deleted.'
+                "message": f"Account for {email} has been permanently deleted."
             },
-            status=status.HTTP_200_OK
+            status=status.HTTP_200_OK,
         )
