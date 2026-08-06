@@ -8,7 +8,7 @@ load_dotenv()
 DEBUG = False
 
 #Actual domain when deployed
-ALLOWED_HOSTS =['https://perryscollection.onrender.com']
+ALLOWED_HOSTS =['perryscollection.onrender.com']
 
 
 #PostgreSQL configuration via environment variables
