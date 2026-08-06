@@ -1,26 +1,20 @@
 from dotenv import load_dotenv
 from .base import *
 import os
+import dj_database_url
 
 load_dotenv()
 
 DEBUG = False
 
 #Actual domain when deployed
-ALLOWED_HOSTS =[]
+ALLOWED_HOSTS =['https://perryscollection.onrender.com']
 
 
 #PostgreSQL configuration via environment variables
 
-DATABASES ={
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME'),
-        'USER': os.environ.get('DB_USER'),
-        'PASSWORD': os.environ.get('DB_PASSWORD'),
-        'HOST': os.environ.get('DB_HOST', 'localhost'),
-        'PORT': os.environ.get('DB_PORT', '5432'),
-    }
+DATABASES = {
+    'default': dj_database_url.config(default=os.environ.get('DATABASE_URL'))
 }
 
 # settings.py
@@ -33,6 +27,8 @@ CACHES = {
 
 #Security settings for production
 SECURE_HSTS_SECONDS = 31536000
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
 SECURE_SSL_REDIRECT = True
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
@@ -46,6 +42,6 @@ CORS_ALLOW_CREDENTIALS = True
 CACHES = {
     'default':{
         'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': os.environ.get('REDIS_URL', 'redis//127.0.0.1:6379/1'),
+        'LOCATION': os.environ.get('REDIS_URL', 'redis://127.0.0.1:6379/1'),
     }
 }
