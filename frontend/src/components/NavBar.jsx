@@ -1,13 +1,4 @@
-// src/components/NavBar.jsx
-// ─────────────────────────────────────────────────────────────────
-// WHAT CHANGED:
-// - Navbar background is now white (was dark brown/black)
-// - All text/border colors flipped to dark-on-white for contrast
-// - "Login" renamed to "Sign in"
-// - Login/Register both now use the shared .btn-outline-shimmer
-//   button style (white bg, theme text, gradient shimmer sweeps
-//   in on hover) instead of two different custom-styled links
-// ─────────────────────────────────────────────────────────────────
+
 
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
@@ -43,6 +34,8 @@ export default function NavBar() {
   return (
     <>
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Monsieur+La+Doulaise&display=swap');
+
         .pc-nav {
           position: fixed; top: 0; left: 0; right: 0;
           z-index: 100;
@@ -54,12 +47,12 @@ export default function NavBar() {
 
         .pc-nav-inner {
           max-width: 1280px; margin: 0 auto; padding: 0 1.5rem;
-          height: 72px; display: flex; align-items: center;
+          height: 76px; display: flex; align-items: center;
           justify-content: space-between;
         }
 
         /* ── Logo zone ── */
-        .pc-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; flex-shrink: 0; }
+        .pc-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; flex-shrink: 0; }
         .pc-logo-mark {
           width: 38px; height: 38px; border-radius: 50%;
           background: linear-gradient(135deg, #c49448 0%, #8b5e1a 100%);
@@ -67,9 +60,20 @@ export default function NavBar() {
           font-size: 17px; font-weight: 700; color: #120a06;
           font-family: Georgia, serif; flex-shrink: 0;
         }
-        .pc-logo-text { display: flex; flex-direction: column; line-height: 1.15; }
-        .pc-logo-name { font-size: 15px; font-weight: 600; color: #4a2f10; letter-spacing: 0.04em; font-family: Georgia, serif; }
-        .pc-logo-sub { font-size: 10px; font-weight: 400; color: #8b5e1a; letter-spacing: 0.14em; text-transform: uppercase; }
+        .pc-logo-text { display: flex; flex-direction: column; line-height: 0.95; justify-content: center; }
+        .pc-logo-name {
+          font-family: 'Monsieur La Doulaise', cursive;
+          font-size: 30px;
+          font-weight: 400;
+          color: #4a2f10;
+          letter-spacing: 0;
+          line-height: 1;
+        }
+        .pc-logo-sub {
+          font-size: 9px; font-weight: 600; color: #8b5e1a;
+          letter-spacing: 0.22em; text-transform: uppercase;
+          margin-top: 3px;
+        }
 
         /* ── Center nav zone ── */
         .pc-nav-center {
@@ -320,7 +324,7 @@ export default function NavBar() {
         </div>
       </nav>
 
-      <div style={{ height: "72px" }} aria-hidden="true" />
+      <div style={{ height: "76px" }} aria-hidden="true" />
     </>
   );
 }
