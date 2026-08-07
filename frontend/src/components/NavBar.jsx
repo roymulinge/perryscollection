@@ -4,22 +4,14 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
-import "../styles/buttons.css";
 
 export default function NavBar() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
 
   const { cart } = useCart();
   const { user, logout } = useAuth();
   const cartCount = cart.total_items;
-
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   useEffect(() => {
     setMenuOpen(false);
@@ -34,162 +26,141 @@ export default function NavBar() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Monsieur+La+Doulaise&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+        :root{
+          --paper:#FFFFFF;
+          --cream:#F6F1E6;
+          --ink:#221E19;
+          --ink-soft:#5B564C;
+          --brass:#A5793A;
+          --brass-dark:#7C5A29;
+          --oxide:#8B4632;
+          --line:#E5DFD1;
+        }
 
         .pc-nav {
           position: fixed; top: 0; left: 0; right: 0;
           z-index: 100;
-          transition: background 0.3s, box-shadow 0.3s;
-          background: #ffffff;
-          border-bottom: 1px solid rgba(196,148,72,0.25);
-          box-shadow: ${scrolled ? "0 2px 20px rgba(0,0,0,0.08)" : "none"};
+          background: var(--paper);
+          border-bottom: 1px solid var(--line);
         }
 
         .pc-nav-inner {
-          max-width: 1280px; margin: 0 auto; padding: 0 1.5rem;
+          max-width: 1280px; margin: 0 auto; padding: 0 48px;
           height: 76px; display: flex; align-items: center;
           justify-content: space-between;
+          font-family: 'Archivo', sans-serif;
         }
 
-        /* ── Logo zone ── */
+        /* ── Logo ── */
         .pc-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; flex-shrink: 0; }
         .pc-logo-mark {
           width: 38px; height: 38px; border-radius: 50%;
-          background: linear-gradient(135deg, #c49448 0%, #8b5e1a 100%);
+          background: var(--ink); color: var(--paper);
           display: flex; align-items: center; justify-content: center;
-          font-size: 17px; font-weight: 700; color: #120a06;
-          font-family: Georgia, serif; flex-shrink: 0;
+          font-family: 'Instrument Serif', serif; font-size: 20px; flex-shrink: 0;
         }
-        .pc-logo-text { display: flex; flex-direction: column; line-height: 0.95; justify-content: center; }
-        .pc-logo-name {
-          font-family: 'Monsieur La Doulaise', cursive;
-          font-size: 30px;
-          font-weight: 400;
-          color: #4a2f10;
-          letter-spacing: 0;
-          line-height: 1;
-        }
-        .pc-logo-sub {
-          font-size: 9px; font-weight: 600; color: #8b5e1a;
-          letter-spacing: 0.22em; text-transform: uppercase;
-          margin-top: 3px;
-        }
+        .pc-logo-text { line-height: 1.05; }
+        .pc-logo-name { font-family: 'Instrument Serif', serif; font-size: 19px; letter-spacing: 0.01em; color: var(--ink); display: block; }
+        .pc-logo-sub { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; letter-spacing: 0.18em; color: var(--ink-soft); text-transform: uppercase; }
 
-        /* ── Center nav zone ── */
-        .pc-nav-center {
-          display: flex; align-items: center; flex: 1;
-          justify-content: center;
-          gap: 0.25rem;
-          margin: 0 2rem;
-        }
-
-        .pc-nav-links { display: flex; align-items: center; gap: 0.5rem; list-style: none; margin: 0; padding: 0; }
-        .pc-nav-links li { position: relative; }
+        /* ── Center nav links ── */
+        .pc-nav-links { display: flex; align-items: center; gap: 36px; list-style: none; margin: 0; padding: 0; }
         .pc-nav-links a {
-          display: block; padding: 0.55rem 1rem; font-size: 14px; font-weight: 500;
-          color: #5a3e22; text-decoration: none; border-radius: 6px;
-          letter-spacing: 0.02em; transition: color 0.2s, background 0.2s; white-space: nowrap;
+          position: relative; padding-bottom: 4px; font-size: 14.5px;
+          color: var(--ink-soft); text-decoration: none; transition: color 0.2s; white-space: nowrap;
         }
-        .pc-nav-links a:hover { color: #8b5e1a; background: rgba(196,148,72,0.08); }
-
-        .pc-nav-links a.active { color: #8b5e1a; }
-        .pc-nav-links a.active::after {
-          content: '';
-          position: absolute;
-          left: 1rem; right: 1rem; bottom: 2px;
-          height: 2px;
-          background: linear-gradient(90deg, #c49448, #8b5e1a);
-          border-radius: 2px;
+        .pc-nav-links a::after {
+          content: ''; position: absolute; left: 0; bottom: 0; width: 0; height: 1px;
+          background: var(--brass); transition: width 0.25s ease;
         }
+        .pc-nav-links a:hover { color: var(--ink); }
+        .pc-nav-links a:hover::after { width: 100%; }
+        .pc-nav-links a.active { color: var(--ink); }
+        .pc-nav-links a.active::after { width: 100%; background: var(--brass-dark); }
 
-        /* ── Right-side actions zone ── */
-        .pc-nav-actions { display: flex; align-items: center; gap: 0.6rem; flex-shrink: 0; }
+        /* ── Right-side actions ── */
+        .pc-nav-actions { display: flex; align-items: center; gap: 26px; flex-shrink: 0; }
 
         .pc-cart-link {
           display: flex; align-items: center; gap: 7px;
-          height: 38px; padding: 0 12px;
-          border-radius: 8px;
-          background: rgba(196,148,72,0.06);
-          border: 1px solid rgba(196,148,72,0.3);
-          color: #5a3e22; font-size: 13px; font-weight: 600;
-          text-decoration: none;
-          transition: background 0.2s, border-color 0.2s, color 0.2s;
+          font-size: 14px; color: var(--ink-soft); text-decoration: none;
+          transition: color 0.2s;
         }
-        .pc-cart-link:hover { background: rgba(196,148,72,0.12); border-color: #c49448; color: #8b5e1a; }
-        .pc-cart-link i { font-size: 17px; }
+        .pc-cart-link:hover { color: var(--ink); }
+        .pc-cart-link i { font-size: 18px; }
         .pc-cart-count {
-          min-width: 18px; height: 18px; padding: 0 4px;
-          border-radius: 9px;
-          background: linear-gradient(135deg, #c49448, #8b5e1a);
-          color: #120a06; font-size: 11px; font-weight: 700;
-          display: flex; align-items: center; justify-content: center;
+          background: var(--ink); color: var(--paper);
+          font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+          width: 16px; height: 16px; border-radius: 50%;
+          display: flex; align-items: center; justify-content: center; flex-shrink: 0;
         }
 
         .pc-account-link {
           display: flex; align-items: center; gap: 8px;
-          height: 38px; padding: 0 12px;
-          border-radius: 8px;
-          background: transparent;
-          border: 1px solid rgba(196,148,72,0.3);
-          color: #5a3e22; font-size: 13px; font-weight: 500;
-          text-decoration: none; cursor: pointer;
-          transition: background 0.2s, border-color 0.2s, color 0.2s;
+          font-size: 14px; color: var(--ink-soft); text-decoration: none;
+          transition: color 0.2s;
         }
-        .pc-account-link:hover { background: rgba(196,148,72,0.08); border-color: #c49448; color: #8b5e1a; }
+        .pc-account-link:hover { color: var(--ink); }
         .pc-account-avatar {
           width: 22px; height: 22px; border-radius: 50%;
-          background: linear-gradient(135deg, #c49448, #8b5e1a);
+          background: var(--ink); color: var(--paper);
           display: flex; align-items: center; justify-content: center;
-          font-size: 10px; font-weight: 700; color: #120a06; flex-shrink: 0;
+          font-family: 'Instrument Serif', serif; font-size: 12px; flex-shrink: 0;
         }
 
+        .pc-signin-link { font-size: 14px; color: var(--ink-soft); text-decoration: none; transition: color 0.2s; }
+        .pc-signin-link:hover { color: var(--ink); }
+
         .pc-logout-btn {
-          height: 38px; padding: 0 12px; font-size: 13px; font-weight: 500;
-          color: #7a5e3a; background: transparent;
-          border: 1px solid rgba(196,148,72,0.2); border-radius: 8px;
-          cursor: pointer; transition: color 0.2s, border-color 0.2s, background 0.2s;
+          font-size: 13px; color: var(--ink-soft); background: none; border: none;
+          cursor: pointer; padding: 0; font-family: 'Archivo', sans-serif;
+          transition: color 0.2s;
         }
-        .pc-logout-btn:hover { color: #dc2626; border-color: rgba(220,38,38,0.3); background: rgba(220,38,38,0.06); }
+        .pc-logout-btn:hover { color: var(--oxide); }
 
         /* ── Hamburger (mobile) ── */
         .pc-hamburger {
-          display: none; width: 40px; height: 40px; background: transparent;
-          border: 1px solid rgba(196,148,72,0.3); border-radius: 8px; cursor: pointer;
-          align-items: center; justify-content: center; color: #5a3e22; font-size: 20px;
-          transition: background 0.2s;
+          display: none; width: 38px; height: 38px; background: transparent;
+          border: 1px solid var(--line); border-radius: 2px; cursor: pointer;
+          align-items: center; justify-content: center; color: var(--ink); font-size: 20px;
+          transition: border-color 0.2s;
         }
-        .pc-hamburger:hover { background: rgba(196,148,72,0.08); }
+        .pc-hamburger:hover { border-color: var(--brass); }
 
         /* ── Mobile menu ── */
-        .pc-mobile-menu { display: none; background: #ffffff; border-top: 1px solid rgba(196,148,72,0.2); padding: 1rem 1.5rem 1.5rem; }
+        .pc-mobile-menu { display: none; background: var(--paper); border-top: 1px solid var(--line); padding: 1rem 24px 1.5rem; }
         .pc-mobile-menu.open { display: block; }
-        .pc-mobile-links { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 1rem; }
+        .pc-mobile-links { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
         .pc-mobile-links a, .pc-mobile-links button {
           display: flex; align-items: center; gap: 10px;
-          padding: 0.75rem 0.85rem; font-size: 15px; font-weight: 500;
-          color: #5a3e22; text-decoration: none; border-radius: 8px; width: 100%;
+          padding: 0.75rem 0.6rem; font-size: 15px; font-weight: 500;
+          color: var(--ink-soft); text-decoration: none; width: 100%;
           text-align: left; background: transparent; border: none; cursor: pointer;
+          font-family: 'Archivo', sans-serif;
           transition: background 0.2s, color 0.2s;
         }
-        .pc-mobile-links a.active { color: #8b5e1a; background: rgba(196,148,72,0.1); }
-        .pc-mobile-links a:hover, .pc-mobile-links button:hover { background: rgba(196,148,72,0.08); color: #8b5e1a; }
+        .pc-mobile-links a.active { color: var(--ink); background: var(--cream); }
+        .pc-mobile-links a:hover, .pc-mobile-links button:hover { background: var(--cream); color: var(--ink); }
         .pc-mobile-user-chip {
           display: flex; align-items: center; gap: 10px;
-          padding: 0.85rem; margin-bottom: 0.75rem;
-          background: rgba(196,148,72,0.06); border: 1px solid rgba(196,148,72,0.2);
-          border-radius: 10px;
+          padding: 0.85rem 0.6rem; margin-bottom: 0.5rem;
+          border-bottom: 1px solid var(--line);
         }
 
         @media (max-width: 900px) {
-          .pc-nav-center { display: none; }
-          .pc-account-link span, .pc-cart-link span.label { display: none; }
+          .pc-nav-inner { padding: 0 24px; }
+          .pc-nav-links-center { display: none; }
+          .pc-account-link span:not(.pc-account-avatar), .pc-signin-link, .pc-cart-link span.label { display: none; }
         }
         @media (max-width: 768px) {
-          .pc-nav-actions > *:not(.pc-hamburger) { display: none; }
+          .pc-account-link, .pc-signin-link, .pc-logout-btn { display: none; }
           .pc-hamburger { display: flex; }
         }
         @media (max-width: 480px) {
           .pc-logo-text { display: none; }
+          .pc-nav-actions { gap: 16px; }
         }
       `}</style>
 
@@ -200,13 +171,13 @@ export default function NavBar() {
           <Link to="/" className="pc-logo" aria-label="Perry's Collection home">
             <div className="pc-logo-mark">P</div>
             <div className="pc-logo-text">
-              <span className="pc-logo-name">Perry's</span>
-              <span className="pc-logo-sub">Collection</span>
+              <span className="pc-logo-name">Perry's Collection</span>
+              <span className="pc-logo-sub">Est. Nairobi</span>
             </div>
           </Link>
 
           {/* ── Center nav links ── */}
-          <div className="pc-nav-center">
+          <div className="pc-nav-links-center">
             <ul className="pc-nav-links" role="list">
               {navLinks.map((link) => (
                 <li key={link.to}>
@@ -221,7 +192,9 @@ export default function NavBar() {
             </ul>
           </div>
 
-          {/* ── Right-side actions ── */}
+          {/* ── Right-side actions ──
+              Cart stays visible at every width — only labels and
+              the account/sign-in block fold into the hamburger. */}
           <div className="pc-nav-actions">
 
             <Link to="/cart" className="pc-cart-link" aria-label={`Cart, ${cartCount} items`}>
@@ -240,25 +213,14 @@ export default function NavBar() {
                   </div>
                   <span>{user.full_name?.split(" ")[0] || "Account"}</span>
                 </Link>
-                <Link to="/profile">
-                 <span>
-                  {user.full_name?.split(" ")[0] || "Account"}
-                 </span>
-                </Link>
                 <button className="pc-logout-btn" onClick={logout}>
                   Logout
                 </button>
               </>
             ) : (
               <>
-                <Link to="/login" className="btn-outline-shimmer btn-sm">
-                  <i className="ti ti-login" aria-hidden="true" />
-                  <span>Sign in</span>
-                </Link>
-                <Link to="/register" className="btn-outline-shimmer btn-sm">
-                  <i className="ti ti-user-plus" aria-hidden="true" />
-                  <span>Register</span>
-                </Link>
+                <Link to="/login" className="pc-signin-link">Sign in</Link>
+                <Link to="/register" className="pc-signin-link">Register</Link>
               </>
             )}
           </div>
@@ -278,14 +240,14 @@ export default function NavBar() {
         <div className={`pc-mobile-menu ${menuOpen ? "open" : ""}`} aria-hidden={!menuOpen}>
           {user && (
             <div className="pc-mobile-user-chip">
-              <div className="pc-account-avatar" style={{ width: 32, height: 32, fontSize: 13 }}>
+              <div className="pc-account-avatar" style={{ width: 32, height: 32, fontSize: 14 }}>
                 {(user.full_name || user.email)[0].toUpperCase()}
               </div>
               <div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: "#4a2f10" }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "#221E19" }}>
                   {user.full_name || "Account"}
                 </div>
-                <div style={{ fontSize: 12, color: "#7a5e3a" }}>{user.email}</div>
+                <div style={{ fontSize: 12, color: "#5B564C" }}>{user.email}</div>
               </div>
             </div>
           )}
@@ -301,17 +263,10 @@ export default function NavBar() {
                 </Link>
               </li>
             ))}
-            <li>
-              <Link to="/cart">
-                <i className="ti ti-shopping-cart" aria-hidden="true" />
-                Cart {cartCount > 0 && `(${cartCount})`}
-              </Link>
-            </li>
             {user ? (
               <>
                 <li><Link to="/orders"><i className="ti ti-receipt" aria-hidden="true" /> My Orders</Link></li>
                 <li><Link to="/account"><i className="ti ti-user" aria-hidden="true" /> Account</Link></li>
-                <li><Link to="/profile"><i className="ti ti-user" aria-hidden="true" /> Profile</Link></li>
                 <li><button onClick={logout}><i className="ti ti-logout" aria-hidden="true" /> Logout</button></li>
               </>
             ) : (

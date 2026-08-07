@@ -1,103 +1,93 @@
+/* src/styles/buttons.css
+   ─────────────────────────────────────────────────────────────────
+   Rebuilt against the reference page's button, .btn-primary:
+     background: ink, color: paper, padding 15px 26px, font 14px,
+     letter-spacing 0.02em, border-radius 2px (sharp, not pill),
+     hover -> brass-dark, with an arrow that nudges right on hover.
+   No gradients, no glow, no shimmer-as-decoration — the "shimmer" on
+   the outline variant here is a restrained single brass sweep on
+   hover, not a looping animation, to stay consistent with the
+   reference's flat, quiet aesthetic.
+   ───────────────────────────────────────────────────────────────── */
+
+:root{
+  --paper:#FFFFFF;
+  --cream:#F6F1E6;
+  --ink:#221E19;
+  --ink-soft:#5B564C;
+  --brass:#A5793A;
+  --brass-dark:#7C5A29;
+  --line:#E5DFD1;
+}
+
+.btn-molten,
+.btn-outline-shimmer {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 26px;
+  font-family: 'Archivo', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  border-radius: 2px;
+  cursor: pointer;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+/* ── Molten: the primary CTA — solid ink, matches reference .btn-primary ── */
 .btn-molten {
-  margin-top: 8px;
-  width: 100%;
-  height: 52px;
-  padding: 0 28px;
-  border: none;
-  border-radius: 14px;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  color: #fdf6ea;
-  background: linear-gradient(120deg, #8b5e1a, #c49448, #e8c87a, #c49448, #8b5e1a);
-  background-size: 300% 100%;
-  background-position: 0% 50%;
-  transition: background-position 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s ease;
+  background: var(--ink);
+  color: var(--paper);
+}
+.btn-molten:hover {
+  background: var(--brass-dark);
+}
+.btn-molten:disabled {
+  background: var(--ink-soft);
+  cursor: not-allowed;
 }
 
-.btn-molten:hover { background-position: 100% 50%; }
-.btn-molten:active { transform: scale(0.97); }
-.btn-molten:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-
-.btn-outline {
-    
-  height: 52px;
-  padding: 0 28px;
-  border: none;
-  border-radius: 14px;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  color: #8b5e1a;
-  background: #ffffff;
-  transition: opacity 0.2s ease, transform 0.15s ease;
+/* ── Outline: secondary action — hairline border, fills on hover ── */
+.btn-outline-shimmer {
+  position: relative;
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--line);
+  overflow: hidden;
+  z-index: 0;
 }
-
-
-.btn-outline-shimmer{
-    padding: 0 12px;
-    align-items: center;
-    height: 38px;
-    display: flex;
-    border:1.5px solid #c49448;
-    border-radius: 10px;
-    cursor: pointer;
-    font-family: inherit;
-    font-weight: 700;
-    letter-spacing: 0.02rem;
-    color:#8b5e1a;
-    background-color: #ffffff;
-    position:relative;
-    overflow:hidden;
-    z-index:0;
-    transition: color 0.4s ease, border-color 0.4s ease, transform 0.15s ease;
-    
-}
-
 .btn-outline-shimmer::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(120deg, #8b5e1a, #c49448, #e8c87a, #c49448, #8b5e1a);
-  background-size: 300% 100%;
-  background-position: 0% 50%;
-  transform: translateX(-101%);
-  transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+  background: var(--cream);
+  transform: translateX(-100%);
+  transition: transform 0.25s ease;
   z-index: -1;
 }
-
 .btn-outline-shimmer:hover {
-  color: #fdf6ea;
-  border-color: transparent;
+  border-color: var(--brass);
+  color: var(--brass-dark);
 }
 .btn-outline-shimmer:hover::before {
   transform: translateX(0);
-  animation: shimmer-move 1.6s linear infinite;
 }
-.btn-outline-shimmer:active { transform: scale(0.97); }
-.btn-outline-shimmer:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-
-@keyframes shimmer-move {
-  0% { background-position: 0% 50%; }
-  100% { background-position: 100% 50%; }
+.btn-outline-shimmer:disabled {
+  color: var(--ink-soft);
+  cursor: not-allowed;
 }
 
+.btn-molten i,
+.btn-outline-shimmer i {
+  font-size: 15px;
+}
+
+/* Size modifier used in compact contexts (e.g. inline nav actions) */
 .btn-sm {
-  height: 38px;
-  padding: 0 16px;
+  padding: 9px 16px;
   font-size: 13px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;
 }
-.btn-outline:hover { opacity: 0.85; }
-.btn-outline:active { transform: scale(0.97); }
-.btn-outline:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-
-
-
