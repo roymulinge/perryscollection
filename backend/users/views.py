@@ -8,7 +8,6 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
-from shopping_cart.utils import Cart
 from django.conf import settings
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests

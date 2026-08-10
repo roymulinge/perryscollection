@@ -23,7 +23,7 @@ class Cart(models.Model):
         max_length=255,
         null=True,
         blank=True,
-        unique=True,
+        
     )
 
     status = models.CharField(
