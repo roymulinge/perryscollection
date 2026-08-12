@@ -1,17 +1,17 @@
 from django.db import transaction
-from django.db.models import F
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from products.models import Product
-from shopping_cart.services import CartService
 
 from .models import Order, OrderItem
+from . import mpesa
 
 
 class CheckoutService:
     """
-    Business logic for converting a cart into an order.
+    Business logic for converting a shopping cart
+    into an order.
     """
 
     @staticmethod
@@ -19,39 +19,33 @@ class CheckoutService:
     def create_order(
         *,
         cart,
-        user=None,
         checkout_data,
+        callback_url,
     ):
         """
-        Convert the current cart into an Order.
+        Create an order from the current cart.
 
-        The entire operation happens inside one database transaction.
+        The cart itself is not blindly trusted.
 
-        Steps:
-        1. Reject empty carts.
-        2. Lock products.
-        3. Re-check product availability and stock.
-        4. Create the order.
-        5. Create order items using the current product price.
-        6. Reduce stock.
-        7. Calculate the final order total.
-        8. Complete the cart.
+        Products and stock are checked again while
+        the transaction is active.
         """
 
-        if not cart.items.exists():
+        cart_items = list(
+            cart.items
+            .select_related("product")
+            .all()
+        )
+
+        if not cart_items:
             raise ValidationError(
                 "Cannot checkout with an empty cart."
             )
 
-        # Lock all products involved in this checkout.
-        cart_items = list(
-            cart.items
-            .select_related("product")
-            .select_for_update()
-        )
+        locked_products = {}
 
-        for item in cart_items:
-            if item.product is None:
+        for cart_item in cart_items:
+            if cart_item.product_id is None:
                 raise ValidationError(
                     "Cart contains a deleted product."
                 )
@@ -59,7 +53,9 @@ class CheckoutService:
             product = (
                 Product.objects
                 .select_for_update()
-                .filter(id=item.product_id)
+                .filter(
+                    id=cart_item.product_id
+                )
                 .first()
             )
 
@@ -78,60 +74,132 @@ class CheckoutService:
                     f"{product.name} is no longer available."
                 )
 
-            if product.stock <= 0:
-                raise ValidationError(
-                    f"{product.name} is out of stock."
-                )
-
-            if item.quantity > product.stock:
+            if cart_item.quantity > product.stock:
                 raise ValidationError(
                     f"Only {product.stock} "
                     f"{product.name} items are available."
                 )
 
-        # Create the order first.
-        order = Order.objects.create(
-            user=user,
-            email=checkout_data["email"],
-            full_name=checkout_data["full_name"],
-            phone_number=checkout_data.get("phone_number", ""),
-            address_line1=checkout_data["address_line1"],
-            address_line2=checkout_data.get("address_line2", ""),
-            city=checkout_data["city"],
-            postal_code=checkout_data["postal_code"],
-            country=checkout_data["country"],
-            payment_method=checkout_data["payment_method"],
-            status="pending",
-            is_paid=False,
+            locked_products[
+                product.id
+            ] = product
+
+        payment_method = checkout_data[
+            "payment_method"
+        ]
+
+        phone_number = checkout_data.get(
+            "phone_number",
+            "",
         )
 
-        # Create order items using the LIVE price.
-        for item in cart_items:
-            product = (
-                Product.objects
-                .select_for_update()
-                .get(id=item.product_id)
-            )
+        order = Order.objects.create(
+            user=(
+                cart.user
+                if cart.user_id
+                else None
+            ),
+            email=checkout_data["email"],
+            full_name=checkout_data["full_name"],
+            phone_number=phone_number,
+            address_line1=checkout_data[
+                "address_line1"
+            ],
+            address_line2=checkout_data.get(
+                "address_line2",
+                "",
+            ),
+            city=checkout_data["city"],
+            postal_code=checkout_data[
+                "postal_code"
+            ],
+            country=checkout_data["country"],
+            payment_method=payment_method,
+        )
 
-            OrderItem.objects.create(
+        total_amount = 0
+
+        for cart_item in cart_items:
+            product = locked_products[
+                cart_item.product_id
+            ]
+
+            order_item = OrderItem.objects.create(
                 order=order,
                 product=product,
-                quantity=item.quantity,
+                quantity=cart_item.quantity,
                 price=product.price,
             )
 
-            # Stock is changed while the product row is locked.
-            Product.objects.filter(
-                id=product.id
-            ).update(
-                stock=F("stock") - item.quantity
+            total_amount += order_item.subtotal
+
+        order.total_amount = total_amount
+        order.save(
+            update_fields=["total_amount"]
+        )
+
+        if payment_method == "mpesa":
+            try:
+                mpesa_response = (
+                    mpesa.trigger_stk_push(
+                        phone_number=phone_number,
+                        amount=order.total_amount,
+                        order_id=order.id,
+                        callback_url=callback_url,
+                    )
+                )
+            except Exception as exc:
+                raise ValidationError(
+                    {
+                        "payment": (
+                            "Unable to initiate "
+                            "M-Pesa payment."
+                        )
+                    }
+                ) from exc
+
+            response_code = mpesa_response.get(
+                "ResponseCode"
             )
 
-        # Calculate the authoritative order total
-        # from the OrderItems, not from the cart.
-        order.update_total()
+            if response_code != "0":
+                raise ValidationError(
+                    {
+                        "payment": (
+                            mpesa_response.get(
+                                "ResponseDescription",
+                                "M-Pesa payment "
+                                "could not be initiated.",
+                            )
+                        )
+                    }
+                )
 
-        # The cart is now finished.
-        CartService.complete_cart(cart=cart)
+            checkout_request_id = (
+                mpesa_response.get(
+                    "CheckoutRequestID"
+                )
+            )
+
+            merchant_request_id = (
+                mpesa_response.get(
+                    "MerchantRequestID"
+                )
+            )
+
+            order.mpesa_checkout_request_id = (
+                checkout_request_id or ""
+            )
+
+            order.mpesa_merchant_request_id = (
+                merchant_request_id or ""
+            )
+
+            order.save(
+                update_fields=[
+                    "mpesa_checkout_request_id",
+                    "mpesa_merchant_request_id",
+                ]
+            )
 
         return order
