@@ -6,7 +6,7 @@ from products.models import Product
 
 from .models import Order, OrderItem
 from . import mpesa
-
+from django.conf import settings
 
 class CheckoutService:
     """
@@ -20,7 +20,6 @@ class CheckoutService:
         *,
         cart,
         checkout_data,
-        callback_url,
     ):
         """
         Create an order from the current cart.
@@ -145,7 +144,7 @@ class CheckoutService:
                         phone_number=phone_number,
                         amount=order.total_amount,
                         order_id=order.id,
-                        callback_url=callback_url,
+                        callback_url=settings.MPESA_CALLBACK_URL,
                     )
                 )
             except Exception as exc:

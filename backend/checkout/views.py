@@ -18,7 +18,7 @@ from .serializers import (
 )
 from .services import CheckoutService
 from . import mpesa
-
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
@@ -83,12 +83,8 @@ class CheckoutCreateAPIView(APIView):
 
         order = CheckoutService.create_order(
             cart=cart,
-            user=(
-                request.user
-                if request.user.is_authenticated
-                else None
-            ),
             checkout_data=serializer.validated_data,
+             
         )
 
         return Response(
@@ -154,7 +150,7 @@ class MpesaSTKPushAPIView(APIView):
                 phone_number=order.phone_number,
                 amount=order.total_amount,
                 order_id=order.id,
-                callback_url=mpesa.settings.MPESA_CALLBACK_URL,
+                callback_url=settings.MPESA_CALLBACK_URL,
             )
 
         except Exception as exc:

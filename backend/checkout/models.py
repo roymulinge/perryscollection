@@ -98,13 +98,13 @@ class OrderItem(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2)   # price at purchase time
     subtotal = models.DecimalField(max_digits=10, decimal_places=2, editable=False)
 
-class Meta:
-    constraints = [
-        models.UniqueConstraint(
-            fields=["order", "product"],
-            name="unique_product_per_order",
-        ),
-    ]
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["order", "product"],
+                name="unique_product_per_order",
+            ),
+        ]
 
     def save(self, *args, **kwargs):
         self.subtotal = self.price * self.quantity
