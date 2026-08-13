@@ -7,7 +7,7 @@ from products.models import Product
 from .models import Order, OrderItem
 from . import mpesa
 from django.conf import settings
-
+from notifications.services import NotificationService
 class CheckoutService:
     """
     Business logic for converting a shopping cart
@@ -201,5 +201,6 @@ class CheckoutService:
                     "mpesa_merchant_request_id",
                 ]
             )
+        NotificationService.order_placed(order)
 
         return order

@@ -1,110 +1,158 @@
-# notifications/views.py
+from django.utils import timezone
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
-from django.utils import timezone
+
 from .models import Notification
-from .serializers import NotificationSerializer, MarkReadSerializer
+from .serializers import (
+    NotificationSerializer,
+    MarkReadSerializer,
+)
 
 
 class NotificationListAPIView(APIView):
     """
-    GET  /api/notifications/        → list my notifications
-    DELETE /api/notifications/      → clear all my notifications
-    
-    Supports query param: ?unread=true → only unread notifications
+    GET /api/notifications/
+
+    Return the authenticated user's notifications.
     """
-    permission_classes = [IsAuthenticated]  # must be logged in
+
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # Start with all notifications for this user
-        queryset = Notification.objects.filter(recipient=request.user)
+        notifications = (
+            Notification.objects
+            .filter(recipient=request.user)
+            .order_by("-created_at")
+        )
 
-        # Optional filter: ?unread=true
-        # This lets the frontend badge show just the unread count
-        unread_only = request.query_params.get('unread')
-        if unread_only == 'true':
-            queryset = queryset.filter(is_read=False)
+        serializer = NotificationSerializer(
+            notifications,
+            many=True,
+        )
 
-        serializer = NotificationSerializer(queryset, many=True)
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
+        )
 
-        # Also return unread count in the response —
-        # useful for the bell badge in the navbar
-        unread_count = Notification.objects.filter(
+
+class UnreadNotificationListAPIView(APIView):
+    """
+    GET /api/notifications/unread/
+
+    Return the authenticated user's unread notifications.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        notifications = (
+            Notification.objects
+            .filter(
+                recipient=request.user,
+                is_read=False,
+            )
+            .order_by("-created_at")
+        )
+
+        serializer = NotificationSerializer(
+            notifications,
+            many=True,
+        )
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
+        )
+
+
+class MarkNotificationsReadAPIView(APIView):
+    """
+    PATCH /api/notifications/read/
+
+    Mark selected notifications as read.
+
+    If notification_ids is empty, mark all
+    notifications belonging to the user as read.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request):
+        serializer = MarkReadSerializer(
+            data=request.data,
+        )
+
+        serializer.is_valid(
+            raise_exception=True,
+        )
+
+        notification_ids = serializer.validated_data[
+            "notification_ids"
+        ]
+
+        queryset = Notification.objects.filter(
             recipient=request.user,
-            is_read=False
-        ).count()
+            is_read=False,
+        )
 
-        return Response({
-            'count': queryset.count(),
-            'unread_count': unread_count,
-            'results': serializer.data
-        })
+        if notification_ids:
+            queryset = queryset.filter(
+                id__in=notification_ids,
+            )
 
-    def delete(self, request):
-        # Hard delete all notifications for this user
-        Notification.objects.filter(recipient=request.user).delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        updated_count = queryset.update(
+            is_read=True,
+            read_at=timezone.now(),
+        )
+
+        return Response(
+            {
+                "message": "Notifications marked as read.",
+                "updated_count": updated_count,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
-class NotificationMarkReadAPIView(APIView):
+class MarkNotificationReadAPIView(APIView):
     """
-    POST /api/notifications/mark-read/
-    
-    Body: { "notification_ids": [1, 2, 3] }
-    Empty list [] means mark ALL as read.
+    PATCH /api/notifications/<notification_id>/read/
+
+    Mark one notification as read.
     """
+
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
-        serializer = MarkReadSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        ids = serializer.validated_data['notification_ids']
-        now = timezone.now()  # capture current time once
-
-        if ids:
-            # Mark only specified notifications as read
-            # .filter(recipient=request.user) ensures users can't mark
-            # other people's notifications as read — security check
-            updated = Notification.objects.filter(
-                id__in=ids,
-                recipient=request.user,
-                is_read=False  # only update unread ones (efficiency)
-            ).update(is_read=True, read_at=now)
-        else:
-            # Empty list = mark ALL as read
-            updated = Notification.objects.filter(
-                recipient=request.user,
-                is_read=False
-            ).update(is_read=True, read_at=now)
-
-        return Response({
-            'message': f'{updated} notification(s) marked as read.'
-        })
-
-
-class NotificationDeleteAPIView(APIView):
-    """
-    DELETE /api/notifications/<id>/   → delete a single notification
-    """
-    permission_classes = [IsAuthenticated]
-
-    def delete(self, request, notification_id):
+    def patch(self, request, notification_id):
         try:
-            # .get() with recipient=request.user prevents users
-            # from deleting each other's notifications
             notification = Notification.objects.get(
                 id=notification_id,
-                recipient=request.user
+                recipient=request.user,
             )
-            notification.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
         except Notification.DoesNotExist:
             return Response(
-                {'error': 'Notification not found'},
-                status=status.HTTP_404_NOT_FOUND
+                {"error": "Notification not found."},
+                status=status.HTTP_404_NOT_FOUND,
             )
+
+        if not notification.is_read:
+            notification.is_read = True
+            notification.read_at = timezone.now()
+
+            notification.save(
+                update_fields=[
+                    "is_read",
+                    "read_at",
+                ]
+            )
+
+        return Response(
+            NotificationSerializer(
+                notification
+            ).data,
+            status=status.HTTP_200_OK,
+        )

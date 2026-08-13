@@ -19,6 +19,7 @@ from .serializers import (
 from .services import CheckoutService
 from . import mpesa
 from django.conf import settings
+from notifications.services import NotificationService
 
 logger = logging.getLogger(__name__)
 
@@ -193,6 +194,7 @@ class MpesaSTKPushAPIView(APIView):
                 "mpesa_merchant_request_id",
             ]
         )
+        
 
         return Response(
             {
@@ -279,6 +281,7 @@ class MpesaCallbackAPIView(APIView):
                 ),
                 "",
             )
+            already_paid = order.is_paid
 
             order.is_paid = True
             order.status = "paid"
@@ -293,6 +296,8 @@ class MpesaCallbackAPIView(APIView):
                     "mpesa_receipt_number",
                 ]
             )
+            if not already_paid:
+             NotificationService.order_paid(order)
 
             logger.info(
                 "Order %s paid successfully.",

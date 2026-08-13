@@ -64,7 +64,7 @@ INSTALLED_APPS = [
     'products',
     'shopping_cart',
     'checkout',
-    'notifications',
+    "notifications.apps.NotificationsConfig",
     'inventory_agent',
 ]
 
