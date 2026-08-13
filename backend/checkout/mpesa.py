@@ -33,11 +33,13 @@ def get_access_token():
     """
     Get a Daraja OAuth access token.
 
-    The token is cached so we don't request a new token
-    for every M-Pesa operation.
+    The token is cached so we don't request
+    a new token for every M-Pesa operation.
     """
 
-    cached_token = cache.get("mpesa_access_token")
+    cached_token = cache.get(
+        "mpesa_access_token"
+    )
 
     if cached_token:
         return cached_token
@@ -69,13 +71,37 @@ def get_access_token():
         timeout=10,
     )
 
+    print(
+        "MPESA OAUTH STATUS:",
+        response.status_code,
+    )
+
+    print(
+        "MPESA OAUTH RESPONSE:",
+        response.text,
+    )
+
     response.raise_for_status()
 
     data = response.json()
 
-    token = data["access_token"]
+    token = data.get("access_token")
 
-    # Cache slightly below the typical token lifetime.
+    if not token:
+        raise RuntimeError(
+            "M-Pesa OAuth returned an empty access token."
+        )
+
+    print(
+        "MPESA TOKEN RECEIVED:",
+        bool(token),
+    )
+
+    print(
+        "MPESA TOKEN LENGTH:",
+        len(token),
+    )
+
     cache.set(
         "mpesa_access_token",
         token,
@@ -165,10 +191,10 @@ def trigger_stk_push(
     """
     Send an M-Pesa STK Push request.
 
-    Important:
     A successful STK Push response means Safaricom
-    accepted the request. It does NOT mean the customer
-    has successfully paid.
+    accepted the request.
+
+    It does NOT mean the customer has successfully paid.
 
     Actual payment confirmation happens through
     the callback.
@@ -217,15 +243,43 @@ def trigger_stk_push(
         ),
     }
 
+    stk_headers = {
+        "Authorization": (
+            f"Bearer {access_token}"
+        ),
+        "Content-Type": "application/json",
+    }
+
+    print(
+        "MPESA TOKEN USED FOR STK:",
+        bool(access_token),
+    )
+
+    print(
+        "MPESA TOKEN LENGTH USED:",
+        len(access_token),
+    )
+
+    print(
+        "MPESA AUTH HEADER PREFIX:",
+        stk_headers["Authorization"][:7],
+    )
+
     response = requests.post(
         url,
         json=payload,
-        headers={
-            "Authorization": (
-                f"Bearer {access_token}"
-            )
-        },
+        headers=stk_headers,
         timeout=15,
+    )
+
+    print(
+        "MPESA STK STATUS:",
+        response.status_code,
+    )
+
+    print(
+        "MPESA STK RESPONSE:",
+        response.text,
     )
 
     response.raise_for_status()

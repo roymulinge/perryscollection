@@ -1,5 +1,5 @@
 from django.db import transaction
-from django.utils import timezone
+
 from rest_framework.exceptions import ValidationError
 
 from products.models import Product
@@ -148,11 +148,12 @@ class CheckoutService:
                     )
                 )
             except Exception as exc:
+                print("MPESA ERROR:", repr(exc))
+
                 raise ValidationError(
                     {
                         "payment": (
-                            "Unable to initiate "
-                            "M-Pesa payment."
+                            f"Unable to initiate M-Pesa payment: {exc}"
                         )
                     }
                 ) from exc
