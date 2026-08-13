@@ -1,17 +1,11 @@
-// src/pages/CategoryPage.jsx
-// Shows products filtered to a single category.
-// Fetches category + its products from /api/categories/<slug>/
-// Supports pagination via ?page=N query param.
 
 import { useState, useEffect } from "react";
-import { useParams, Link, useSearchParams } from "react-router-dom";
+import { useParams, Link, useSearchParams, useNavigate } from "react-router-dom";
 import { fetchCategoryProducts } from "../api/products";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
 
 function ProductCard({ product, onAddToCart }) {
-  const [hovered, setHovered] = useState(false);
   const [adding, setAdding] = useState(false);
   const initials = product.name.split(" ").slice(0, 2).map((w) => w[0]).join("");
 
@@ -23,75 +17,31 @@ function ProductCard({ product, onAddToCart }) {
   }
 
   return (
-    <Link
-      to={`/products/${product.slug}`}
-      style={{
-        display: "block", textDecoration: "none", borderRadius: 12,
-        overflow: "hidden", background: "#1a0f08",
-        border: `1px solid ${hovered ? "rgba(196,148,72,0.45)" : "rgba(196,148,72,0.15)"}`,
-        transition: "border-color 0.25s,transform 0.25s,box-shadow 0.25s",
-        transform: hovered ? "translateY(-4px)" : "none",
-        boxShadow: hovered ? "0 12px 32px rgba(0,0,0,0.5)" : "none",
-      }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
-      <div style={{
-        aspectRatio: "4/5",
-        background: "linear-gradient(135deg,#2a1708 0%,#1a0f08 60%,#261505 100%)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        position: "relative", overflow: "hidden",
-      }}>
+    <Link to={`/products/${product.slug}`} className="pc-card">
+      <div className="pc-card-media">
         {product.image ? (
-          <img src={product.image} alt={product.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <img src={product.image} alt={product.name} loading="lazy" />
         ) : (
-          <div style={{
-            width: 60, height: 60, borderRadius: "50%",
-            background: "rgba(196,148,72,0.1)", border: "1px solid rgba(196,148,72,0.2)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 20, fontWeight: 600, color: "#c49448", fontFamily: "Georgia,serif",
-          }}>{initials}</div>
+          <div className="pc-card-initials">{initials}</div>
         )}
+
         {product.stock === 0 && (
-          <div style={{
-            position: "absolute", inset: 0, background: "rgba(18,10,6,0.65)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <span style={{ color: "#9a7a4a", fontSize: 13, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase" }}>
-              Out of stock
-            </span>
+          <div className="pc-card-oos">
+            <span>Out of stock</span>
           </div>
         )}
-        {/* Quick add — only show on hover for in-stock items */}
+
         {product.stock > 0 && (
-          <div style={{
-            position: "absolute", bottom: 0, left: 0, right: 0,
-            padding: "0.75rem",
-            background: "linear-gradient(to top,rgba(18,10,6,0.9) 0%,transparent 100%)",
-            transform: hovered ? "translateY(0)" : "translateY(100%)",
-            transition: "transform 0.25s",
-          }}>
-            <button
-              onClick={handleAdd}
-              disabled={adding}
-              style={{
-                width: "100%", padding: "0.5rem",
-                background: adding ? "rgba(196,148,72,0.5)" : "linear-gradient(135deg,#c49448,#8b5e1a)",
-                border: "none", borderRadius: 8,
-                fontSize: 12, fontWeight: 700, color: "#120a06", cursor: "pointer",
-              }}
-            >
+          <div className="pc-card-overlay">
+            <button onClick={handleAdd} disabled={adding} className="pc-card-add-btn">
               {adding ? "Adding…" : "Add to Cart"}
             </button>
           </div>
         )}
       </div>
-      <div style={{ padding: "0.85rem 1rem" }}>
-        <p style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 500, color: "#ddc799", lineHeight: 1.3 }}>{product.name}</p>
-        <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#c49448" }}>
-          KES {parseInt(product.price).toLocaleString()}
-        </p>
-      </div>
+
+      <div className="pc-card-name">{product.name}</div>
+      <div className="pc-card-price">KES {parseInt(product.price).toLocaleString()}</div>
     </Link>
   );
 }
@@ -133,65 +83,140 @@ export default function CategoryPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  const pageStyles = (
+    <style>{`
+      @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+      :root{
+        --paper:#FFFFFF;
+        --cream:#F6F1E6;
+        --ink:#221E19;
+        --ink-soft:#5B564C;
+        --brass:#A5793A;
+        --brass-dark:#7C5A29;
+        --line:#E5DFD1;
+      }
+
+      .pc-cat-page { background: var(--paper); min-height: 100vh; padding: 40px 24px 80px; font-family: 'Archivo', sans-serif; color: var(--ink); }
+      .pc-cat-page * { box-sizing: border-box; }
+      .pc-cat-inner { max-width: 1240px; margin: 0 auto; }
+
+      .pc-breadcrumb { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--ink-soft); margin-bottom: 32px; }
+      .pc-breadcrumb a { color: var(--ink-soft); text-decoration: none; transition: color 0.2s; }
+      .pc-breadcrumb a:hover { color: var(--ink); }
+      .pc-breadcrumb i { font-size: 11px; }
+      .pc-breadcrumb .current { color: var(--ink); }
+
+      .pc-cat-title { font-family: 'Instrument Serif', serif; font-weight: 400; font-size: clamp(32px, 4vw, 48px); margin: 0 0 8px; color: var(--ink); }
+      .pc-cat-count { font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; letter-spacing: 0.04em; color: var(--ink-soft); margin: 0 0 40px; }
+
+      .pc-cat-grid-products { display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; margin-bottom: 48px; }
+      .pc-card { cursor: pointer; text-decoration: none; color: inherit; display: block; }
+      .pc-card-media { background: var(--cream); aspect-ratio: 4/5; border-radius: 3px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; margin-bottom: 14px; }
+      .pc-card-media img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.35s ease; }
+      .pc-card:hover .pc-card-media img { transform: scale(1.06); }
+      .pc-card-initials { width: 60px; height: 60px; border-radius: 50%; background: var(--paper); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-family: 'Instrument Serif', serif; font-size: 20px; color: var(--brass-dark); }
+      .pc-card-oos { position: absolute; inset: 0; background: rgba(246,241,230,0.85); display: flex; align-items: center; justify-content: center; }
+      .pc-card-oos span { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); }
+      .pc-card-overlay { position: absolute; bottom: 0; left: 0; right: 0; padding: 10px; background: linear-gradient(to top, rgba(246,241,230,0.95), transparent); transform: translateY(100%); transition: transform 0.25s; }
+      .pc-card:hover .pc-card-overlay { transform: translateY(0); }
+      .pc-card-add-btn { width: 100%; padding: 9px; background: var(--ink); color: var(--paper); border: none; border-radius: 2px; font-size: 12px; font-weight: 500; letter-spacing: 0.02em; cursor: pointer; transition: background 0.2s; }
+      .pc-card-add-btn:hover { background: var(--brass-dark); }
+      .pc-card-add-btn:disabled { background: var(--ink-soft); cursor: not-allowed; }
+      .pc-card-name { font-size: 14.5px; font-weight: 500; margin-bottom: 3px; color: var(--ink); }
+      .pc-card-price { font-family: 'IBM Plex Mono', monospace; font-size: 13.5px; color: var(--brass-dark); }
+
+      .pc-empty { text-align: center; padding: 5rem 0; color: var(--ink-soft); }
+      .pc-empty i { font-size: 44px; display: block; margin-bottom: 16px; color: var(--line); }
+      .pc-empty p { font-size: 15px; margin-bottom: 20px; }
+
+      .pc-flat-btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; background: var(--ink); color: var(--paper); border-radius: 2px; text-decoration: none; font-size: 14px; font-weight: 500; border: none; cursor: pointer; transition: background 0.2s; }
+      .pc-flat-btn:hover { background: var(--brass-dark); }
+
+      .pc-pagination { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; }
+      .pc-page-btn { padding: 9px 14px; border-radius: 2px; cursor: pointer; font-size: 13.5px; font-weight: 500; color: var(--ink-soft); border: 1px solid var(--line); background: var(--paper); display: flex; align-items: center; gap: 6px; transition: background 0.2s, color 0.2s, border-color 0.2s; }
+      .pc-page-btn:hover:not(:disabled) { border-color: var(--brass); color: var(--ink); }
+      .pc-page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+      .pc-page-btn.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+      .pc-center { min-height: 60vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; padding: 32px; }
+      .pc-spinner { width: 34px; height: 34px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--brass); animation: pc-spin 0.8s linear infinite; }
+      @keyframes pc-spin { to { transform: rotate(360deg); } }
+      .pc-error-text { color: var(--oxide, #8B4632); font-size: 14px; }
+
+      @media (max-width: 900px) {
+        .pc-cat-grid-products { grid-template-columns: repeat(3, 1fr); }
+      }
+      @media (max-width: 700px) {
+        .pc-cat-grid-products { grid-template-columns: repeat(2, 1fr); gap: 18px; }
+      }
+      @media (max-width: 420px) {
+        .pc-cat-grid-products { grid-template-columns: 1fr; }
+        .pc-cat-page { padding: 28px 16px 56px; }
+      }
+    `}</style>
+  );
+
   if (loading) return (
-    <div style={styles.center}>
-      <div style={styles.spinner} />
+    <div className="pc-cat-page">
+      {pageStyles}
+      <div className="pc-center">
+        <div className="pc-spinner" />
+      </div>
     </div>
   );
 
   if (error === "404") return (
-    <div style={styles.center}>
-      <h1 style={{ color: "#f0dba8", fontFamily: "Georgia,serif" }}>Category not found</h1>
-      <Link to="/products" style={styles.goldBtn}>Browse all products</Link>
+    <div className="pc-cat-page">
+      {pageStyles}
+      <div className="pc-center">
+        <h1 className="pc-cat-title" style={{ marginBottom: 0 }}>Category not found</h1>
+        <Link to="/products" className="pc-flat-btn">Browse all products</Link>
+      </div>
     </div>
   );
 
   if (error) return (
-    <div style={styles.center}>
-      <p style={{ color: "#fca5a5" }}>{error}</p>
-      <button onClick={() => window.location.reload()} style={styles.goldBtn}>Retry</button>
+    <div className="pc-cat-page">
+      {pageStyles}
+      <div className="pc-center">
+        <p className="pc-error-text">{error}</p>
+        <button onClick={() => window.location.reload()} className="pc-flat-btn">Retry</button>
+      </div>
     </div>
   );
 
   const { category, products, pagination } = data;
 
   return (
-    <main style={{ background: "#120a06", minHeight: "100vh", padding: "2.5rem 1.5rem" }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+    <div className="pc-cat-page">
+      {pageStyles}
+      <div className="pc-cat-inner">
 
         {/* Breadcrumb */}
-        <nav style={{ marginBottom: "2rem", display: "flex", gap: "0.5rem", alignItems: "center", fontSize: 13, color: "#5a3e22" }} aria-label="Breadcrumb">
-          <Link to="/" style={{ color: "#7a5e3a", textDecoration: "none" }}>Home</Link>
-          <i className="ti ti-chevron-right" style={{ fontSize: 12 }} aria-hidden="true" />
-          <Link to="/products" style={{ color: "#7a5e3a", textDecoration: "none" }}>Products</Link>
-          <i className="ti ti-chevron-right" style={{ fontSize: 12 }} aria-hidden="true" />
-          <span style={{ color: "#c4ab82" }}>{category.name}</span>
+        <nav className="pc-breadcrumb" aria-label="Breadcrumb">
+          <Link to="/">Home</Link>
+          <i className="ti ti-chevron-right" aria-hidden="true" />
+          <Link to="/products">Products</Link>
+          <i className="ti ti-chevron-right" aria-hidden="true" />
+          <span className="current">{category.name}</span>
         </nav>
 
         {/* Header */}
-        <div style={{ marginBottom: "2.5rem" }}>
-          <h1 style={{ fontFamily: "Georgia,serif", fontSize: "clamp(2rem,4vw,3rem)", fontWeight: 400, color: "#f0dba8", margin: "0 0 8px" }}>
-            {category.name}
-          </h1>
-          <p style={{ color: "#7a5e3a", fontSize: 14, margin: 0 }}>
-            {pagination.total} {pagination.total === 1 ? "product" : "products"}
-          </p>
-        </div>
+        <h1 className="pc-cat-title">{category.name}</h1>
+        <p className="pc-cat-count">
+          {pagination.total} {pagination.total === 1 ? "product" : "products"}
+        </p>
 
         {/* Products grid */}
         {products.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "5rem 0", color: "#7a5e3a" }}>
-            <i className="ti ti-package-off" style={{ fontSize: 48, display: "block", marginBottom: "1rem", color: "#3a2a18" }} aria-hidden="true" />
-            <p style={{ fontSize: 16, marginBottom: "1.5rem" }}>No products in this category yet.</p>
-            <Link to="/products" style={styles.goldBtn}>Browse all products</Link>
+          <div className="pc-empty">
+            <i className="ti ti-package-off" aria-hidden="true" />
+            <p>No products in this category yet.</p>
+            <Link to="/products" className="pc-flat-btn">Browse all products</Link>
           </div>
         ) : (
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))",
-            gap: "1.25rem",
-            marginBottom: "3rem",
-          }}>
+          <div className="pc-cat-grid-products">
             {products.map((p) => (
               <ProductCard key={p.id} product={p} onAddToCart={handleAddToCart} />
             ))}
@@ -200,11 +225,11 @@ export default function CategoryPage() {
 
         {/* Pagination */}
         {pagination.total_pages > 1 && (
-          <div style={{ display: "flex", justifyContent: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+          <div className="pc-pagination">
             <button
               onClick={() => goToPage(currentPage - 1)}
               disabled={!pagination.has_previous}
-              style={{ ...styles.pageBtn, opacity: pagination.has_previous ? 1 : 0.35 }}
+              className="pc-page-btn"
             >
               <i className="ti ti-arrow-left" aria-hidden="true" /> Prev
             </button>
@@ -213,13 +238,7 @@ export default function CategoryPage() {
               <button
                 key={p}
                 onClick={() => goToPage(p)}
-                style={{
-                  ...styles.pageBtn,
-                  background: p === currentPage ? "linear-gradient(135deg,#c49448,#8b5e1a)" : "transparent",
-                  color: p === currentPage ? "#120a06" : "#c4ab82",
-                  border: p === currentPage ? "none" : "1px solid rgba(196,148,72,0.2)",
-                  fontWeight: p === currentPage ? 700 : 500,
-                }}
+                className={`pc-page-btn ${p === currentPage ? "active" : ""}`}
                 aria-current={p === currentPage ? "page" : undefined}
               >
                 {p}
@@ -229,20 +248,13 @@ export default function CategoryPage() {
             <button
               onClick={() => goToPage(currentPage + 1)}
               disabled={!pagination.has_next}
-              style={{ ...styles.pageBtn, opacity: pagination.has_next ? 1 : 0.35 }}
+              className="pc-page-btn"
             >
               Next <i className="ti ti-arrow-right" aria-hidden="true" />
             </button>
           </div>
         )}
       </div>
-    </main>
+    </div>
   );
 }
-
-const styles = {
-  center: { minHeight: "60vh", background: "#120a06", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "1.5rem", padding: "2rem" },
-  spinner: { width: 36, height: 36, borderRadius: "50%", border: "3px solid rgba(196,148,72,0.15)", borderTopColor: "#c49448", animation: "pc-spin 0.8s linear infinite" },
-  goldBtn: { display: "inline-flex", alignItems: "center", gap: 8, padding: "0.75rem 2rem", background: "linear-gradient(135deg,#c49448,#8b5e1a)", borderRadius: 10, color: "#120a06", fontWeight: 700, textDecoration: "none", fontSize: 14, border: "none", cursor: "pointer" },
-  pageBtn: { padding: "0.5rem 0.85rem", borderRadius: 8, cursor: "pointer", fontSize: 14, fontWeight: 500, color: "#c4ab82", border: "1px solid rgba(196,148,72,0.2)", background: "transparent", display: "flex", alignItems: "center", gap: 6, transition: "background 0.2s,color 0.2s" },
-};

@@ -1,11 +1,4 @@
 // src/pages/CartPage.jsx
-// ─────────────────────────────────────────────────────────────────
-// WHAT CHANGED:
-// - item.product.image → item.product.image_url (matches the backend fix)
-// - Added an "unavailable" banner per item when is_available is false,
-//   reading the new fields the backend now sends
-// - Disabled quantity controls and dimmed the row for unavailable items
-// ─────────────────────────────────────────────────────────────────
 
 import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
@@ -28,103 +21,59 @@ function CartItem({ item, onRemove, onUpdate }) {
     await onRemove(item.product.id);
   }
 
-  const initials = item.product.name.split(" ").slice(0, 2).map((w) => w[0]).join("");
   const subtotal = parseFloat(item.product.price) * item.quantity;
-
-  // is_available comes from the backend's live re-check —
-  // false means this product was deactivated or sold out
-  // AFTER it was added to the cart
   const unavailable = item.is_available === false;
+  // Options for the quantity <select> — capped at remaining stock if we know it
+  const maxQty = item.stock_remaining ? Math.min(item.stock_remaining, 10) : 10;
+  const qtyOptions = Array.from({ length: maxQty }, (_, i) => i + 1);
 
   return (
-    <div style={{
-      display: "grid",
-      gridTemplateColumns: "80px 1fr auto",
-      gap: "1.25rem",
-      alignItems: "center",
-      padding: "1.25rem",
-      background: "#1a0f08",
-      border: unavailable ? "1px solid rgba(239,68,68,0.25)" : "1px solid rgba(196,148,72,0.15)",
-      borderRadius: 12,
-      opacity: removing ? 0.5 : unavailable ? 0.7 : 1,
-      transition: "opacity 0.3s",
-    }}>
-      {/* Thumbnail */}
-      <Link to={`/products/${item.product.slug}`}>
-        <div style={{
-          width: 80, height: 80, borderRadius: 10,
-          background: "linear-gradient(135deg,#2a1708,#1a0f08)",
-          border: "1px solid rgba(196,148,72,0.12)",
-          overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          {item.product.image_url ? (
-            <img src={item.product.image_url} alt={item.product.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-          ) : (
-            <span style={{ fontSize: 18, fontWeight: 600, color: "#c49448", fontFamily: "Georgia,serif" }}>{initials}</span>
-          )}
-        </div>
+    <div className="cart-row" style={{ opacity: removing ? 0.5 : 1 }}>
+      <Link to={`/products/${item.product.slug}`} className="cart-row-thumb">
+        {item.product.image_url ? (
+          <img src={item.product.image_url} alt={item.product.name} />
+        ) : (
+          <span>{item.product.name.split(" ").slice(0, 2).map((w) => w[0]).join("")}</span>
+        )}
       </Link>
 
-      {/* Details */}
-      <div>
-        <Link to={`/products/${item.product.slug}`} style={{ textDecoration: "none" }}>
-          <p style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 500, color: "#ddc799", lineHeight: 1.3 }}>
-            {item.product.name}
-          </p>
+      <div className="cart-row-details">
+        <Link to={`/products/${item.product.slug}`} className="cart-row-name">
+          {item.product.name}
         </Link>
         {item.product.category_name && (
-          <p style={{ margin: "0 0 6px", fontSize: 12, color: "#7a5e3a" }}>{item.product.category_name}</p>
+          <p className="cart-row-meta">{item.product.category_name}</p>
         )}
-
-        {/* Unavailable warning banner */}
-        {unavailable && (
-          <p style={{ margin: "0 0 10px", fontSize: 12, color: "#fca5a5", display: "flex", alignItems: "center", gap: 6 }}>
-            <i className="ti ti-alert-circle" aria-hidden="true" />
-            {item.stock_remaining === 0 ? "Out of stock" : "No longer available"} — please remove this item
-          </p>
-        )}
-
-        <p style={{ margin: "0 0 10px", fontSize: 14, color: "#c49448", fontWeight: 600 }}>
-          KES {parseInt(item.product.price).toLocaleString()} each
+        <p className="cart-row-meta">
+          {unavailable ? (
+            <span className="cart-row-status unavailable">
+              {item.stock_remaining === 0 ? "Out of stock" : "No longer available"}
+            </span>
+          ) : (
+            <span className="cart-row-status">In Stock ✓</span>
+          )}
         </p>
-
-        {/* Quantity controls — disabled entirely if unavailable */}
-        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <button
-            onClick={() => handleQuantityChange(item.quantity - 1)}
-            disabled={item.quantity <= 1 || updating || unavailable}
-            style={styles.qtyBtn}
-            aria-label="Decrease quantity"
-          >
-            <i className="ti ti-minus" aria-hidden="true" />
-          </button>
-          <span style={{ minWidth: 28, textAlign: "center", fontSize: 15, fontWeight: 600, color: "#f0dba8" }}>
-            {updating ? "…" : item.quantity}
-          </span>
-          <button
-            onClick={() => handleQuantityChange(item.quantity + 1)}
-            disabled={updating || unavailable}
-            style={styles.qtyBtn}
-            aria-label="Increase quantity"
-          >
-            <i className="ti ti-plus" aria-hidden="true" />
+        <div className="cart-row-links">
+          <button onClick={handleRemove} disabled={removing}>
+            {removing ? "Removing…" : "Remove"}
           </button>
         </div>
       </div>
 
-      {/* Subtotal + remove */}
-      <div style={{ textAlign: "right" }}>
-        <p style={{ margin: "0 0 12px", fontSize: 16, fontWeight: 700, color: "#e8c87a", fontFamily: "Georgia,serif" }}>
-          KES {subtotal.toLocaleString()}
-        </p>
-        <button
-          onClick={handleRemove}
-          disabled={removing}
-          style={styles.removeBtn}
-          aria-label={`Remove ${item.product.name} from cart`}
+      <div className="cart-row-qty">
+        <select
+          value={item.quantity}
+          disabled={updating || unavailable}
+          onChange={(e) => handleQuantityChange(Number(e.target.value))}
         >
-          <i className="ti ti-trash" aria-hidden="true" />
-        </button>
+          {qtyOptions.map((n) => (
+            <option key={n} value={n}>{n}</option>
+          ))}
+        </select>
+      </div>
+
+      <div className="cart-row-price">
+        KES {subtotal.toLocaleString()}
       </div>
     </div>
   );
@@ -134,192 +83,192 @@ export default function CartPage() {
   const { cart, cartLoading, removeItem, updateCartItem, clearCart } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [clearing, setClearing] = useState(false);
-
-  async function handleClear() {
-    if (!window.confirm("Remove all items from your cart?")) return;
-    setClearing(true);
-    await clearCart();
-    setClearing(false);
-  }
 
   const items = cart.items || [];
   const total = parseFloat(cart.total_price || 0);
   const deliveryThreshold = 3000;
   const freeDelivery = total >= deliveryThreshold;
-  const amountToFreeDelivery = deliveryThreshold - total;
-
-  // Block checkout if ANY item in the cart is unavailable —
-  // prevents the customer reaching checkout with a stale order
-  // that would just fail server-side anyway
   const hasUnavailableItems = items.some((item) => item.is_available === false);
 
-  if (cartLoading) return (
-    <div style={styles.center}>
-      <div style={styles.spinner} />
-    </div>
-  );
+  function goToCheckout() {
+    if (hasUnavailableItems) return;
+    navigate(user ? "/checkout" : "/login", user ? undefined : { state: { from: "/checkout" } });
+  }
+
+  if (cartLoading) {
+    return (
+      <div className="cart-page cart-center">
+        <div className="cart-spinner" />
+      </div>
+    );
+  }
 
   return (
     <>
       <style>{`
-        @keyframes pc-spin { to { transform: rotate(360deg); } }
-        .cart-qty-btn { width:32px;height:32px;border-radius:7px;border:1px solid rgba(196,148,72,0.22);background:transparent;color:#c4ab82;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s; }
-        .cart-qty-btn:hover:not(:disabled){ background:rgba(196,148,72,0.1); }
-        .cart-qty-btn:disabled{ opacity:0.35;cursor:not-allowed; }
-        @media(max-width:700px){ .cart-layout{ grid-template-columns:1fr !important; } }
+        .cart-page {
+          --paper:#FFFFFF; --cream:#F6F1E6; --ink:#221E19; --ink-soft:#5B564C;
+          --brass:#A5793A; --brass-dark:#7C5A29; --oxide:#8B4632; --sage:#6B7259; --line:#E5DFD1;
+          background:var(--paper); min-height:100vh; padding:3rem;
+          font-family:'Archivo',sans-serif; color:var(--ink);
+        }
+        .cart-center { display:flex; align-items:center; justify-content:center; }
+        .cart-spinner { width:32px;height:32px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--brass);animation:cart-spin .8s linear infinite; }
+        @keyframes cart-spin { to { transform:rotate(360deg); } }
+
+        .cart-shell { max-width:1100px; margin:0 auto; }
+        .cart-header { display:flex; justify-content:space-between; align-items:baseline; padding-bottom:1.25rem; border-bottom:1px solid var(--line); margin-bottom:2rem; }
+        .cart-header h1 { font-family:'Instrument Serif',serif; font-weight:400; font-size:1.9rem; margin:0; letter-spacing:0.02em; }
+        .cart-header h1 span { font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--ink-soft); margin-left:10px; }
+        .cart-header a { font-size:13px; color:var(--ink-soft); text-decoration:underline; }
+        .cart-header a:hover { color:var(--brass-dark); }
+
+        .cart-layout { display:grid; grid-template-columns:1fr 340px; gap:3rem; align-items:start; }
+        @media (max-width:800px) { .cart-layout { grid-template-columns:1fr; } }
+
+        .cart-row { display:grid; grid-template-columns:80px 1fr 90px 100px; gap:1.25rem; align-items:start; padding:1.5rem 0; border-bottom:1px solid var(--line); }
+        @media (max-width:520px) { .cart-row { grid-template-columns:64px 1fr; grid-template-areas:"thumb details" "thumb qty" "thumb price"; row-gap:.5rem; } }
+        .cart-row-thumb { width:80px; height:80px; background:var(--cream); border-radius:4px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+        .cart-row-thumb img { width:100%; height:100%; object-fit:cover; }
+        .cart-row-thumb span { font-family:'Instrument Serif',serif; font-size:18px; color:var(--brass-dark); }
+        .cart-row-name { font-size:14.5px; font-weight:500; color:var(--ink); text-decoration:none; }
+        .cart-row-name:hover { color:var(--brass-dark); }
+        .cart-row-meta { font-size:12.5px; color:var(--ink-soft); margin:4px 0 0; }
+        .cart-row-status { color:var(--sage); }
+        .cart-row-status.unavailable { color:var(--oxide); font-weight:500; }
+        .cart-row-links { margin-top:8px; }
+        .cart-row-links button { background:none; border:none; padding:0; font-size:12.5px; color:var(--ink-soft); text-decoration:underline; cursor:pointer; }
+        .cart-row-links button:hover { color:var(--oxide); }
+        .cart-row-qty select { width:64px; padding:6px 8px; border:1px solid var(--line); border-radius:3px; font-family:'IBM Plex Mono',monospace; font-size:13px; background:var(--paper); color:var(--ink); }
+        .cart-row-price { font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:500; text-align:right; }
+
+        .cart-warning { padding:0.9rem 1.1rem; border-radius:4px; background:rgba(139,70,50,0.06); border:1px solid rgba(139,70,50,0.25); font-size:13px; color:var(--oxide); margin-bottom:1.5rem; }
+
+        .cart-btn-dark { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; height:52px; background:var(--ink); color:var(--paper); border:none; border-radius:3px; font-size:14px; font-weight:600; letter-spacing:0.03em; cursor:pointer; transition:background .2s; text-decoration:none; margin-top:1.5rem; }
+        .cart-btn-dark:hover { background:var(--brass-dark); }
+        .cart-btn-dark:disabled { background:var(--line); color:var(--ink-soft); cursor:not-allowed; }
+
+        .cart-continue { display:inline-block; margin-top:1.25rem; font-size:13px; color:var(--ink-soft); text-decoration:underline; }
+
+        .cart-summary { position:sticky; top:32px; }
+        .cart-summary-agree { font-size:11.5px; color:var(--ink-soft); text-align:center; margin:10px 0 1.5rem; line-height:1.5; }
+        .cart-summary-agree a { color:var(--brass-dark); }
+        .cart-summary-box { border:1px solid var(--line); border-radius:4px; padding:1.5rem; }
+        .cart-summary-box h2 { font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-soft); margin:0 0 1rem; }
+        .cart-summary-row { display:flex; justify-content:space-between; font-size:13.5px; color:var(--ink-soft); margin-bottom:0.6rem; }
+        .cart-summary-total { display:flex; justify-content:space-between; align-items:baseline; border-top:1px solid var(--line); margin-top:0.75rem; padding-top:0.9rem; }
+        .cart-summary-total span:first-child { font-size:14px; font-weight:600; }
+        .cart-summary-total span:last-child { font-family:'IBM Plex Mono',monospace; font-size:19px; font-weight:600; color:var(--brass-dark); }
+
+        .cart-promo { border:1px solid var(--line); border-radius:4px; margin-top:1rem; }
+        .cart-promo summary { padding:0.9rem 1.1rem; font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-soft); cursor:pointer; }
+        .cart-promo-body { padding:0 1.1rem 1rem; display:flex; gap:8px; }
+        .cart-promo-body input { flex:1; border:1px solid var(--line); border-radius:3px; padding:8px 10px; font-size:13px; }
+        .cart-promo-body button { border:1px solid var(--ink); background:var(--paper); padding:0 14px; border-radius:3px; font-size:12.5px; cursor:pointer; }
+
+        .cart-help { margin-top:1.5rem; }
+        .cart-help h3 { font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-soft); margin:0 0 0.75rem; }
+        .cart-help a { display:block; font-size:13px; color:var(--ink); text-decoration:underline; margin-bottom:6px; }
+
+        .cart-payments { display:flex; justify-content:center; gap:1rem; margin-top:1.5rem; font-size:11.5px; color:var(--ink-soft); }
+
+        .cart-empty { text-align:center; padding:5rem 0; }
+        .cart-empty h2 { font-family:'Instrument Serif',serif; font-weight:400; font-size:1.6rem; margin:0 0 0.5rem; }
+        .cart-empty p { color:var(--ink-soft); font-size:14px; margin:0 0 1.75rem; }
       `}</style>
 
-      <main style={{ background: "#120a06", minHeight: "100vh", padding: "2.5rem 1.5rem" }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-
-          {/* Header */}
-          <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: "2rem", flexWrap: "wrap", gap: "1rem" }}>
-            <div>
-              <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#c49448", display: "block", marginBottom: 6 }}>
-                Shopping
-              </span>
-              <h1 style={{ fontFamily: "Georgia,serif", fontSize: "clamp(1.8rem,3vw,2.4rem)", fontWeight: 400, color: "#f0dba8", margin: 0 }}>
-                Your Cart
-                {items.length > 0 && <span style={{ fontSize: "1rem", color: "#7a5e3a", fontFamily: "sans-serif", fontWeight: 400, marginLeft: 12 }}>({items.length} {items.length === 1 ? "item" : "items"})</span>}
-              </h1>
-            </div>
-            {items.length > 0 && (
-              <button onClick={handleClear} disabled={clearing} style={styles.clearBtn}>
-                {clearing ? "Clearing…" : "Clear cart"}
-              </button>
-            )}
+      <main className="cart-page">
+        <div className="cart-shell">
+          <div className="cart-header">
+            <h1>Your Bag {items.length > 0 && <span>{items.length} {items.length === 1 ? "item" : "items"}</span>}</h1>
+            <Link to="/products">Continue Shopping</Link>
           </div>
 
           {items.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "6rem 0" }}>
-              <i className="ti ti-shopping-cart-off" style={{ fontSize: 64, color: "#2a1708", display: "block", marginBottom: "1.5rem" }} aria-hidden="true" />
-              <h2 style={{ fontFamily: "Georgia,serif", fontSize: "1.6rem", color: "#f0dba8", fontWeight: 400, margin: "0 0 0.75rem" }}>
-                Your cart is empty
-              </h2>
-              <p style={{ color: "#7a5e3a", fontSize: 15, margin: "0 0 2rem" }}>
-                Browse our collection and find something you love.
-              </p>
-              <Link to="/products" style={styles.goldBtn}>
-                <i className="ti ti-arrow-left" aria-hidden="true" /> Browse products
+            <div className="cart-empty">
+              <h2>Your bag is empty</h2>
+              <p>Browse our collection and find something you love.</p>
+              <Link to="/products" className="cart-btn-dark" style={{ display: "inline-flex", width: "auto", padding: "0 2rem" }}>
+                Browse products
               </Link>
             </div>
           ) : (
-            <div className="cart-layout" style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: "2rem", alignItems: "start" }}>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+            <div className="cart-layout">
+              <div>
                 {hasUnavailableItems && (
-                  <div style={{
-                    padding: "1rem 1.25rem", borderRadius: 10,
-                    background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)",
-                    fontSize: 13, color: "#fca5a5", display: "flex", alignItems: "center", gap: 8,
-                  }}>
-                    <i className="ti ti-alert-circle" aria-hidden="true" />
-                    Some items in your cart are no longer available. Remove them to continue to checkout.
-                  </div>
-                )}
-
-                {!freeDelivery && !hasUnavailableItems && (
-                  <div style={{
-                    padding: "1rem 1.25rem", borderRadius: 10,
-                    background: "rgba(196,148,72,0.06)", border: "1px solid rgba(196,148,72,0.15)",
-                    fontSize: 13, color: "#c4ab82",
-                  }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                      <span>Add <strong style={{ color: "#e8c87a" }}>KES {amountToFreeDelivery.toLocaleString()}</strong> more for free Nairobi delivery</span>
-                    </div>
-                    <div style={{ height: 4, borderRadius: 2, background: "rgba(196,148,72,0.12)", overflow: "hidden" }}>
-                      <div style={{ height: "100%", borderRadius: 2, background: "linear-gradient(90deg,#c49448,#8b5e1a)", width: `${Math.min(100, (total / deliveryThreshold) * 100).toFixed(1)}%`, transition: "width 0.4s" }} />
-                    </div>
-                  </div>
-                )}
-                {freeDelivery && !hasUnavailableItems && (
-                  <div style={{ padding: "0.75rem 1.25rem", borderRadius: 10, background: "rgba(34,197,94,0.06)", border: "1px solid rgba(34,197,94,0.18)", fontSize: 13, color: "#86efac", display: "flex", alignItems: "center", gap: 8 }}>
-                    <i className="ti ti-truck" aria-hidden="true" /> You qualify for free delivery in Nairobi!
+                  <div className="cart-warning">
+                    Some items in your bag are no longer available — remove them to continue to checkout.
                   </div>
                 )}
 
                 {items.map((item) => (
-                  <CartItem
-                    key={item.product.id}
-                    item={item}
-                    onRemove={removeItem}
-                    onUpdate={updateCartItem}
-                  />
+                  <CartItem key={item.product.id} item={item} onRemove={removeItem} onUpdate={updateCartItem} />
                 ))}
 
-                <Link to="/products" style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 14, color: "#7a5e3a", textDecoration: "none", padding: "0.5rem 0" }}>
-                  <i className="ti ti-arrow-left" aria-hidden="true" /> Continue shopping
-                </Link>
+                <button
+                  className="cart-btn-dark"
+                  onClick={goToCheckout}
+                  disabled={hasUnavailableItems}
+                >
+                  {hasUnavailableItems ? "Remove unavailable items first" : "Checkout →"}
+                </button>
+
+                <Link to="/products" className="cart-continue">← Continue shopping</Link>
               </div>
 
-              {/* Order summary */}
-              <div style={{
-                background: "#1a0f08",
-                border: "1px solid rgba(196,148,72,0.18)",
-                borderRadius: 16, padding: "1.75rem",
-                position: "sticky", top: 88,
-              }}>
-                <h2 style={{ fontSize: 14, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#c49448", margin: "0 0 1.5rem" }}>
-                  Order Summary
-                </h2>
+              <div className="cart-summary">
+                <button
+                  className="cart-btn-dark"
+                  style={{ marginTop: 0 }}
+                  onClick={goToCheckout}
+                  disabled={hasUnavailableItems}
+                >
+                  Checkout →
+                </button>
+                <p className="cart-summary-agree">
+                  By placing your order, you agree to our <a href="/terms">Delivery Terms</a>
+                </p>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginBottom: "1.25rem" }}>
-                  <div style={styles.summaryRow}>
-                    <span>Subtotal ({cart.total_items} items)</span>
+                <div className="cart-summary-box">
+                  <h2>Order Summary</h2>
+                  <div className="cart-summary-row">
+                    <span>{cart.total_items} {cart.total_items === 1 ? "product" : "products"}</span>
+                  </div>
+                  <div className="cart-summary-row">
+                    <span>Product total</span>
                     <span>KES {total.toLocaleString()}</span>
                   </div>
-                  <div style={styles.summaryRow}>
+                  <div className="cart-summary-row">
                     <span>Delivery</span>
-                    <span style={{ color: freeDelivery ? "#86efac" : "#c4ab82" }}>
+                    <span style={{ color: freeDelivery ? "#4d7a4d" : "var(--ink-soft)" }}>
                       {freeDelivery ? "Free" : "Calculated at checkout"}
                     </span>
                   </div>
-                </div>
-
-                <div style={{ borderTop: "1px solid rgba(196,148,72,0.12)", paddingTop: "1.25rem", marginBottom: "1.5rem" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                    <span style={{ fontSize: 15, fontWeight: 600, color: "#ddc799" }}>Total</span>
-                    <span style={{ fontSize: 22, fontWeight: 700, color: "#e8c87a", fontFamily: "Georgia,serif" }}>
-                      KES {total.toLocaleString()}
-                    </span>
+                  <div className="cart-summary-total">
+                    <span>Total</span>
+                    <span>KES {total.toLocaleString()}</span>
                   </div>
                 </div>
 
-                <button
-                  onClick={() => {
-                    if (!user) {
-                      navigate("/login", { state: { from: "/checkout" } });
-                    } else {
-                      navigate("/checkout");
-                    }
-                  }}
-                  disabled={hasUnavailableItems}
-                  style={{
-                    width: "100%", height: 52, border: "none", borderRadius: 12,
-                    background: hasUnavailableItems
-                      ? "#302014"
-                      : "linear-gradient(135deg,#c49448,#8b5e1a)",
-                    color: hasUnavailableItems ? "#7f613d" : "#120a06",
-                    fontSize: 15, fontWeight: 700,
-                    cursor: hasUnavailableItems ? "not-allowed" : "pointer",
-                    letterSpacing: "0.03em", transition: "opacity 0.2s,transform 0.15s",
-                  }}
-                >
-                  {hasUnavailableItems
-                    ? "Remove unavailable items first"
-                    : user ? "Proceed to Checkout" : "Sign in to Checkout"}
-                </button>
+                {/* UI stub only — no promo code backend logic wired up yet */}
+                <details className="cart-promo">
+                  <summary>Promo Code</summary>
+                  <div className="cart-promo-body">
+                    <input type="text" placeholder="Enter code" disabled />
+                    <button disabled>Apply</button>
+                  </div>
+                </details>
 
-                <div style={{ display: "flex", justifyContent: "center", gap: "0.75rem", marginTop: "1rem" }}>
-                  {[
-                    { icon: "ti-device-mobile", label: "M-Pesa" },
-                    { icon: "ti-cash", label: "Cash on Delivery" },
-                  ].map((p) => (
-                    <div key={p.label} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#5a3e22" }}>
-                      <i className={`ti ${p.icon}`} aria-hidden="true" style={{ fontSize: 16, color: "#7a5e3a" }} /> {p.label}
-                    </div>
-                  ))}
+                <div className="cart-help">
+                  <h3>Need Help?</h3>
+                  <Link to="/shipping">Shipping</Link>
+                  <Link to="/returns">Returns &amp; Exchanges</Link>
+                  <Link to="/contact">Contact Us</Link>
+                </div>
+
+                <div className="cart-payments">
+                  <span>M-Pesa</span>
+                  <span>Cash on Delivery</span>
                 </div>
               </div>
             </div>
@@ -329,13 +278,3 @@ export default function CartPage() {
     </>
   );
 }
-
-const styles = {
-  center: { minHeight: "60vh", background: "#120a06", display: "flex", alignItems: "center", justifyContent: "center" },
-  spinner: { width: 36, height: 36, borderRadius: "50%", border: "3px solid rgba(196,148,72,0.15)", borderTopColor: "#c49448", animation: "pc-spin 0.8s linear infinite" },
-  goldBtn: { display: "inline-flex", alignItems: "center", gap: 8, padding: "0.75rem 2rem", background: "linear-gradient(135deg,#c49448,#8b5e1a)", borderRadius: 10, color: "#120a06", fontWeight: 700, textDecoration: "none", fontSize: 14, border: "none", cursor: "pointer" },
-  qtyBtn: { width: 32, height: 32, borderRadius: 7, border: "1px solid rgba(196,148,72,0.22)", background: "transparent", color: "#c4ab82", fontSize: 15, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" },
-  removeBtn: { width: 32, height: 32, borderRadius: 7, border: "1px solid rgba(239,68,68,0.2)", background: "transparent", color: "#ef4444", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "background 0.2s" },
-  clearBtn: { padding: "0.45rem 1rem", background: "transparent", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 8, color: "#ef4444", fontSize: 13, cursor: "pointer", transition: "background 0.2s" },
-  summaryRow: { display: "flex", justifyContent: "space-between", fontSize: 14, color: "#7a5e3a" },
-};
