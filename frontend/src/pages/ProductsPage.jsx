@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { fetchCategories, fetchProducts } from "../api/products";
 import { useCart } from "../context/CartContext";
+
 const currency = new Intl.NumberFormat("en-KE", {
   style: "currency",
   currency: "KES",
@@ -26,7 +27,7 @@ function ProductImage({ product }) {
   }
 
   return (
-    <div className="pc-product-fallback" aria-hidden="true">
+    <div className="pcp-card-initials" aria-hidden="true">
       {initials || "PC"}
     </div>
   );
@@ -37,8 +38,8 @@ function ProductCard({ product }) {
   // useCart() reads from CartContext — the same cart state the Navbar
   // uses for its badge count. Calling addItem() here updates both.
 
-  const [adding, setAdding]   = useState(false);
-  const [added, setAdded]     = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [added, setAdded] = useState(false);
 
   async function handleAddToCart(e) {
     // We need to stop this click from bubbling up.
@@ -64,71 +65,66 @@ function ProductCard({ product }) {
   }
 
   return (
-    <article className="pc-product-card">
+    <article className="pcp-card">
       {/* Image + tags */}
       <Link
         to={`/products/${product.slug}`}
-        className="pc-product-image-link"
+        className="pcp-card-media"
         aria-label={product.name}
       >
+        {product.featured && <span className="pcp-card-tag">Featured</span>}
+        {!product.in_stock && (
+          <span className="pcp-card-tag pcp-card-tag-muted">Out of stock</span>
+        )}
+
         {/* ProductImage handles real image vs initials fallback */}
         <ProductImage product={product} />
-        {product.featured && (
-          <span className="pc-product-tag">Featured</span>
-        )}
-        {!product.in_stock && (
-          <span className="pc-product-tag pc-product-tag-muted">Out of stock</span>
-        )}
+
+        <div className="pcp-card-overlay">
+          <button
+            className="pcp-card-add-btn"
+            type="button"
+            disabled={!product.in_stock || adding}
+            onClick={handleAddToCart}
+            data-added={added}
+          >
+            <i
+              className={`ti ${added ? "ti-check" : "ti-shopping-cart-plus"}`}
+              aria-hidden="true"
+            />
+            {adding ? "Adding…" : added ? "Added" : product.in_stock ? "Add to cart" : "Unavailable"}
+          </button>
+        </div>
       </Link>
 
       {/* Text info */}
-      <div className="pc-product-info">
-        <p className="pc-product-category">
+      <div className="pcp-card-info">
+        <p className="pcp-card-cat">
           {product.category_name || "Perry's Collection"}
         </p>
-        <h2>
+        <h2 className="pcp-card-name">
           <Link to={`/products/${product.slug}`}>{product.name}</Link>
         </h2>
-        <div className="pc-product-price-row">
-          <span className="pc-product-price">{formatPrice(product.price)}</span>
+        <div className="pcp-card-price-row">
+          <span className="pcp-card-price">{formatPrice(product.price)}</span>
           {product.compare_at_price && (
-            <span className="pc-product-compare">
+            <span className="pcp-card-compare">
               {formatPrice(product.compare_at_price)}
             </span>
           )}
         </div>
-
-        {/* Add to cart button — now actually connected to CartContext */}
-        <button
-          className="pc-add-button"
-          type="button"
-          disabled={!product.in_stock || adding}
-          onClick={handleAddToCart}
-          // style changes to green when item is added successfully
-          style={added ? {
-            background: "linear-gradient(135deg,#22c55e,#16a34a)",
-            color: "#0a0603",
-          } : {}}
-        >
-          <i
-            className={`ti ${added ? "ti-check" : "ti-shopping-cart-plus"}`}
-            aria-hidden="true"
-          />
-          {adding ? "Adding…" : added ? "Added!" : product.in_stock ? "Add to cart" : "Unavailable"}
-        </button>
       </div>
     </article>
   );
 }
 
-
 function ProductsSkeleton() {
   return Array.from({ length: 8 }, (_, index) => (
-    <div className="pc-product-card pc-product-card-loading" key={index}>
-      <div className="pc-skeleton-image" />
-      <div className="pc-skeleton-line short" />
-      <div className="pc-skeleton-line" />
-      <div className="pc-skeleton-line price" />
+    <div className="pcp-card pcp-card-loading" key={index}>
+      <div className="pcp-skeleton-media" />
+      <div className="pcp-skeleton-line" style={{ width: "42%" }} />
+      <div className="pcp-skeleton-line" style={{ width: "80%" }} />
+      <div className="pcp-skeleton-line" style={{ width: "55%", height: 16 }} />
     </div>
   ));
 }
@@ -154,8 +150,8 @@ export default function ProductsPage() {
 
   const activeTitle = useMemo(() => {
     if (query) return `Search results for "${query}"`;
-    if (featured === "true") return "Featured Products";
-    return "All Products";
+    if (featured === "true") return "Featured pieces";
+    return "All products";
   }, [featured, query]);
 
   useEffect(() => {
@@ -235,372 +231,113 @@ export default function ProductsPage() {
   return (
     <>
       <style>{`
-        .pc-products-page {
-          min-height: 100vh;
-          background: #120a06;
-          color: #f0dba8;
+        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+        :root{
+          --paper:#FFFFFF;
+          --cream:#F6F1E6;
+          --ink:#221E19;
+          --ink-soft:#5B564C;
+          --brass:#A5793A;
+          --brass-dark:#7C5A29;
+          --oxide:#8B4632;
+          --sage:#6B7259;
+          --line:#E5DFD1;
         }
-        .pc-products-shell {
-          width: min(1200px, calc(100% - 32px));
-          margin: 0 auto;
-          padding: 42px 0 72px;
-        }
-        .pc-products-hero {
-          display: grid;
-          grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
-          gap: 28px;
-          align-items: end;
-          padding: 30px 0 26px;
-          border-bottom: 1px solid rgba(196, 148, 72, 0.16);
-        }
-        .pc-products-eyebrow {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          color: #c49448;
-          font-size: 12px;
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 0.12em;
-          margin-bottom: 12px;
-        }
-        .pc-products-hero h1 {
-          margin: 0;
-          color: #f0dba8;
-          font-family: Georgia, serif;
-          font-size: clamp(2rem, 6vw, 4rem);
-          font-weight: 400;
-          line-height: 1.08;
-        }
-        .pc-products-hero p {
-          max-width: 620px;
-          margin: 14px 0 0;
-          color: #a8895c;
-          font-size: 15px;
-          line-height: 1.7;
-        }
-        .pc-product-search {
-          display: grid;
-          grid-template-columns: minmax(0, 1fr) auto;
-          gap: 10px;
-          padding: 12px;
-          background: #1a0f08;
-          border: 1px solid rgba(196, 148, 72, 0.18);
-          border-radius: 8px;
-        }
-        .pc-product-search input {
-          min-width: 0;
-          height: 44px;
-          border: 1px solid rgba(196, 148, 72, 0.18);
-          border-radius: 7px;
-          background: #120a06;
-          color: #f0dba8;
-          padding: 0 13px;
-          font: inherit;
-          outline: none;
-        }
-        .pc-product-search input:focus {
-          border-color: rgba(196, 148, 72, 0.6);
-        }
-        .pc-filter-bar {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 14px;
-          flex-wrap: wrap;
-          padding: 22px 0;
-        }
-        .pc-filter-actions,
-        .pc-category-chips {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          flex-wrap: wrap;
-        }
-        .pc-chip,
-        .pc-page-button,
-        .pc-submit-search {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          gap: 7px;
-          min-height: 40px;
-          border: 1px solid rgba(196, 148, 72, 0.24);
-          border-radius: 7px;
-          background: transparent;
-          color: #c4ab82;
-          cursor: pointer;
-          text-decoration: none;
-          font-size: 13px;
-          font-weight: 600;
-          padding: 0 14px;
-          transition: background 0.2s, border-color 0.2s, color 0.2s;
-        }
-        .pc-chip:hover,
-        .pc-page-button:hover,
-        .pc-submit-search:hover {
-          background: rgba(196, 148, 72, 0.09);
-          border-color: rgba(196, 148, 72, 0.45);
-          color: #e8c87a;
-        }
-        .pc-chip.active,
-        .pc-submit-search {
-          background: linear-gradient(135deg, #c49448 0%, #8b5e1a 100%);
-          border-color: transparent;
-          color: #120a06;
-        }
-        .pc-results-meta {
-          color: #7f613d;
-          font-size: 13px;
-        }
-        .pc-products-grid {
-          display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 18px;
-        }
-        .pc-product-card {
-          overflow: hidden;
-          background: #1a0f08;
-          border: 1px solid rgba(196, 148, 72, 0.16);
-          border-radius: 8px;
-          transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
-        }
-        .pc-product-card:hover {
-          transform: translateY(-3px);
-          border-color: rgba(196, 148, 72, 0.42);
-          box-shadow: 0 12px 30px rgba(0, 0, 0, 0.34);
-        }
-        .pc-product-image-link {
-          position: relative;
-          display: block;
-          aspect-ratio: 4 / 5;
-          overflow: hidden;
-          background: linear-gradient(135deg, #2a1708 0%, #120a06 100%);
-          text-decoration: none;
-        }
-        .pc-product-image-link img {
-          width: 100%;
-          height: 100%;
-          display: block;
-          object-fit: cover;
-          transition: transform 0.25s;
-        }
-        .pc-product-card:hover img {
-          transform: scale(1.04);
-        }
-        .pc-product-fallback {
-          width: 100%;
-          height: 100%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: #c49448;
-          font-family: Georgia, serif;
-          font-size: 34px;
-          background:
-            linear-gradient(135deg, rgba(196, 148, 72, 0.12), transparent),
-            #1a0f08;
-        }
-        .pc-product-tag {
-          position: absolute;
-          top: 10px;
-          left: 10px;
-          padding: 5px 9px;
-          border-radius: 999px;
-          background: rgba(18, 10, 6, 0.84);
-          border: 1px solid rgba(196, 148, 72, 0.24);
-          color: #e8c87a;
-          font-size: 11px;
-          font-weight: 700;
-          backdrop-filter: blur(8px);
-        }
-        .pc-product-tag-muted {
-          left: auto;
-          right: 10px;
-          color: #c4ab82;
-        }
-        .pc-product-info {
-          padding: 14px;
-        }
-        .pc-product-category {
-          margin: 0 0 6px;
-          color: #8d6f48;
-          font-size: 11px;
-          font-weight: 700;
-          letter-spacing: 0.1em;
-          text-transform: uppercase;
-        }
-        .pc-product-info h2 {
-          min-height: 44px;
-          margin: 0 0 10px;
-          font-size: 15px;
-          line-height: 1.45;
-        }
-        .pc-product-info h2 a {
-          color: #ddc799;
-          text-decoration: none;
-        }
-        .pc-product-info h2 a:hover {
-          color: #f0dba8;
-        }
-        .pc-product-price-row {
-          display: flex;
-          align-items: baseline;
-          gap: 8px;
-          margin-bottom: 13px;
-          flex-wrap: wrap;
-        }
-        .pc-product-price {
-          color: #c49448;
-          font-size: 16px;
-          font-weight: 800;
-        }
-        .pc-product-compare {
-          color: #705335;
-          font-size: 13px;
-          text-decoration: line-through;
-        }
-        .pc-add-button {
-          width: 100%;
-          min-height: 40px;
-          border: 0;
-          border-radius: 7px;
-          background: linear-gradient(135deg, #c49448 0%, #8b5e1a 100%);
-          color: #120a06;
-          cursor: pointer;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          font-size: 13px;
-          font-weight: 800;
-        }
-        .pc-add-button:disabled {
-          cursor: not-allowed;
-          background: #302014;
-          color: #7f613d;
-        }
-        .pc-state-panel {
-          min-height: 260px;
-          display: grid;
-          place-items: center;
-          text-align: center;
-          padding: 38px 20px;
-          background: #1a0f08;
-          border: 1px solid rgba(196, 148, 72, 0.16);
-          border-radius: 8px;
-        }
-        .pc-state-panel h2 {
-          margin: 0 0 8px;
-          color: #f0dba8;
-          font-size: 22px;
-        }
-        .pc-state-panel p {
-          max-width: 440px;
-          margin: 0 auto 18px;
-          color: #9a7a4a;
-          line-height: 1.6;
-        }
-        .pc-pagination {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 12px;
-          padding-top: 28px;
-        }
-        .pc-page-button:disabled {
-          opacity: 0.45;
-          cursor: not-allowed;
-        }
-        .pc-page-status {
-          color: #a8895c;
-          font-size: 13px;
-          min-width: 92px;
-          text-align: center;
-        }
-        .pc-product-card-loading {
-          padding-bottom: 14px;
-          transform: none;
-        }
-        .pc-skeleton-image,
-        .pc-skeleton-line {
-          background: linear-gradient(90deg, #211309, #2c1a0e, #211309);
-          background-size: 200% 100%;
-          animation: pc-shimmer 1.2s linear infinite;
-        }
-        .pc-skeleton-image {
-          aspect-ratio: 4 / 5;
-        }
-        .pc-skeleton-line {
-          height: 12px;
-          border-radius: 999px;
-          margin: 14px 14px 0;
-        }
-        .pc-skeleton-line.short {
-          width: 42%;
-        }
-        .pc-skeleton-line.price {
-          width: 55%;
-          height: 16px;
-        }
-        @keyframes pc-shimmer {
-          to { background-position: -200% 0; }
-        }
+
+        .pcp-page { background: var(--paper); font-family: 'Archivo', sans-serif; color: var(--ink); min-height: 100vh; }
+        .pcp-page * { box-sizing: border-box; }
+        .pcp-eyebrow { font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--brass-dark); display: inline-flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+        .pcp-shell { max-width: 1240px; margin: 0 auto; padding: 0 48px 96px; }
+
+        /* ── Hero / header ── */
+        .pcp-hero { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr); gap: 32px; align-items: end; padding: 64px 0 40px; border-bottom: 1px solid var(--line); }
+        .pcp-hero h1 { font-family: 'Instrument Serif', serif; font-weight: 400; font-size: clamp(34px, 5vw, 56px); line-height: 1.08; margin: 0; color: var(--ink); }
+        .pcp-hero p { font-size: 15px; line-height: 1.65; color: var(--ink-soft); max-width: 480px; margin: 14px 0 0; }
+
+        .pcp-search { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 10px; padding: 4px; }
+        .pcp-search input { min-width: 0; height: 46px; border: 1px solid var(--line); border-radius: 3px; background: var(--cream); color: var(--ink); padding: 0 14px; font: inherit; outline: none; transition: border-color 0.2s; }
+        .pcp-search input:focus { border-color: var(--brass); }
+        .pcp-search-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 46px; padding: 0 20px; border: none; border-radius: 3px; background: var(--ink); color: var(--paper); font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
+        .pcp-search-btn:hover { background: var(--brass-dark); }
+
+        /* ── Filter bar ── */
+        .pcp-filter-bar { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; padding: 28px 0; }
+        .pcp-filter-actions, .pcp-cat-chips { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .pcp-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 38px; padding: 0 16px; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); color: var(--ink-soft); font-size: 13px; font-weight: 500; cursor: pointer; text-decoration: none; transition: background 0.2s, border-color 0.2s, color 0.2s; }
+        .pcp-chip:hover { border-color: var(--brass); color: var(--ink); background: var(--cream); }
+        .pcp-chip.active { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+        .pcp-results-meta { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--ink-soft); }
+
+        /* ── Product grid (matches homepage card language) ── */
+        .pcp-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; }
+        .pcp-card { display: block; }
+        .pcp-card-media { position: relative; display: block; aspect-ratio: 4/5; background: var(--cream); border-radius: 3px; overflow: hidden; margin-bottom: 16px; text-decoration: none; }
+        .pcp-card-media img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.35s ease; }
+        .pcp-card:hover .pcp-card-media img { transform: scale(1.06); }
+        .pcp-card-initials { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-family: 'Instrument Serif', serif; font-size: 28px; color: var(--brass-dark); }
+        .pcp-card-tag { position: absolute; top: 12px; left: 12px; background: var(--ink); color: var(--paper); font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; padding: 5px 9px; border-radius: 2px; z-index: 1; }
+        .pcp-card-tag-muted { left: auto; right: 12px; background: var(--paper); color: var(--ink-soft); border: 1px solid var(--line); }
+        .pcp-card-overlay { position: absolute; bottom: 0; left: 0; right: 0; padding: 10px; background: linear-gradient(to top, rgba(246,241,230,0.95), transparent); transform: translateY(100%); transition: transform 0.25s; }
+        .pcp-card:hover .pcp-card-overlay { transform: translateY(0); }
+        .pcp-card-add-btn { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px; border: none; border-radius: 2px; background: var(--ink); color: var(--paper); font-size: 12.5px; font-weight: 500; cursor: pointer; transition: background 0.2s; }
+        .pcp-card-add-btn:hover { background: var(--brass-dark); }
+        .pcp-card-add-btn:disabled { background: var(--ink-soft); cursor: not-allowed; }
+        .pcp-card-add-btn[data-added="true"] { background: var(--sage); }
+
+        .pcp-card-cat { font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); margin: 0 0 6px; }
+        .pcp-card-name { min-height: 42px; margin: 0 0 10px; font-size: 15px; line-height: 1.4; font-weight: 500; }
+        .pcp-card-name a { color: var(--ink); text-decoration: none; }
+        .pcp-card-name a:hover { color: var(--brass-dark); }
+        .pcp-card-price-row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+        .pcp-card-price { font-family: 'IBM Plex Mono', monospace; font-size: 14px; color: var(--brass-dark); }
+        .pcp-card-compare { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--ink-soft); text-decoration: line-through; }
+
+        /* ── Empty / error states ── */
+        .pcp-state-panel { min-height: 280px; display: grid; place-items: center; text-align: center; padding: 40px 20px; background: var(--cream); border: 1px solid var(--line); border-radius: 4px; }
+        .pcp-state-panel h2 { font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 26px; margin: 0 0 8px; color: var(--ink); }
+        .pcp-state-panel p { max-width: 440px; margin: 0 auto 20px; color: var(--ink-soft); line-height: 1.6; font-size: 14.5px; }
+        .pcp-state-btn { display: inline-flex; align-items: center; gap: 6px; padding: 0 18px; height: 40px; border: none; border-radius: 3px; background: var(--ink); color: var(--paper); font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.2s; }
+        .pcp-state-btn:hover { background: var(--brass-dark); }
+
+        /* ── Skeletons ── */
+        @keyframes pcp-shimmer { to { background-position: -200% 0; } }
+        .pcp-skeleton-media { aspect-ratio: 4/5; border-radius: 3px; margin-bottom: 16px; background: linear-gradient(90deg, var(--cream), #efe6d2, var(--cream)); background-size: 200% 100%; animation: pcp-shimmer 1.4s linear infinite; }
+        .pcp-skeleton-line { height: 13px; border-radius: 3px; margin-bottom: 8px; background: linear-gradient(90deg, var(--cream), #efe6d2, var(--cream)); background-size: 200% 100%; animation: pcp-shimmer 1.4s linear infinite; }
+
+        /* ── Pagination ── */
+        .pcp-pagination { display: flex; align-items: center; justify-content: center; gap: 16px; padding-top: 40px; }
+        .pcp-page-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 16px; border: 1px solid var(--line); border-radius: 3px; background: var(--paper); color: var(--ink); font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.2s, border-color 0.2s; }
+        .pcp-page-btn:hover:not(:disabled) { border-color: var(--brass); background: var(--cream); }
+        .pcp-page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .pcp-page-status { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--ink-soft); min-width: 100px; text-align: center; }
+
         @media (max-width: 980px) {
-          .pc-products-hero {
-            grid-template-columns: 1fr;
-          }
-          .pc-products-grid {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-          }
+          .pcp-hero { grid-template-columns: 1fr; }
+          .pcp-grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
         }
         @media (max-width: 720px) {
-          .pc-products-shell {
-            width: min(100% - 24px, 1200px);
-            padding-top: 24px;
-          }
-          .pc-products-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 12px;
-          }
-          .pc-filter-bar {
-            align-items: stretch;
-          }
-          .pc-filter-actions,
-          .pc-category-chips {
-            width: 100%;
-            overflow-x: auto;
-            flex-wrap: nowrap;
-            padding-bottom: 2px;
-          }
-          .pc-chip {
-            flex: 0 0 auto;
-          }
-          .pc-results-meta {
-            width: 100%;
-          }
+          .pcp-shell { padding: 0 24px 72px; }
+          .pcp-hero { padding-top: 40px; }
+          .pcp-grid { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 16px; }
+          .pcp-filter-bar { align-items: stretch; }
+          .pcp-filter-actions, .pcp-cat-chips { width: 100%; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 2px; }
+          .pcp-chip { flex: 0 0 auto; }
+          .pcp-results-meta { width: 100%; }
         }
         @media (max-width: 480px) {
-          .pc-product-search {
-            grid-template-columns: 1fr;
-          }
-          .pc-products-grid {
-            grid-template-columns: 1fr;
-          }
-          .pc-product-info h2 {
-            min-height: 0;
-          }
-          .pc-pagination {
-            gap: 8px;
-          }
+          .pcp-search { grid-template-columns: 1fr; }
+          .pcp-grid { grid-template-columns: 1fr; }
+          .pcp-card-name { min-height: 0; }
+          .pcp-pagination { gap: 10px; }
         }
       `}</style>
 
-      <main className="pc-products-page">
-        <div className="pc-products-shell">
-          <section className="pc-products-hero" aria-labelledby="products-title">
+      <main className="pcp-page">
+        <div className="pcp-shell">
+          <section className="pcp-hero" aria-labelledby="products-title">
             <div>
-              <span className="pc-products-eyebrow">
+              <span className="pcp-eyebrow">
                 <i className="ti ti-hanger" aria-hidden="true" />
                 Shop Perry's Collection
               </span>
@@ -611,7 +348,7 @@ export default function ProductsPage() {
               </p>
             </div>
 
-            <form className="pc-product-search" onSubmit={handleSearch} role="search">
+            <form className="pcp-search" onSubmit={handleSearch} role="search">
               <input
                 type="search"
                 value={searchInput}
@@ -619,24 +356,24 @@ export default function ProductsPage() {
                 placeholder="Search products"
                 aria-label="Search products"
               />
-              <button className="pc-submit-search" type="submit">
+              <button className="pcp-search-btn" type="submit">
                 <i className="ti ti-search" aria-hidden="true" />
                 Search
               </button>
             </form>
           </section>
 
-          <section className="pc-filter-bar" aria-label="Product filters">
-            <div className="pc-filter-actions">
+          <section className="pcp-filter-bar" aria-label="Product filters">
+            <div className="pcp-filter-actions">
               <button
-                className={`pc-chip ${featured !== "true" && !query ? "active" : ""}`}
+                className={`pcp-chip ${featured !== "true" && !query ? "active" : ""}`}
                 type="button"
                 onClick={() => updateParams({ featured: "", q: "", page: "" })}
               >
                 All
               </button>
               <button
-                className={`pc-chip ${featured === "true" ? "active" : ""}`}
+                className={`pcp-chip ${featured === "true" ? "active" : ""}`}
                 type="button"
                 onClick={() => updateParams({ featured: featured === "true" ? "" : "true", page: "" })}
               >
@@ -645,7 +382,7 @@ export default function ProductsPage() {
               </button>
               {(query || featured) && (
                 <button
-                  className="pc-chip"
+                  className="pcp-chip"
                   type="button"
                   onClick={() => updateParams({ featured: "", q: "", page: "" })}
                 >
@@ -654,51 +391,53 @@ export default function ProductsPage() {
               )}
             </div>
 
-            <div className="pc-category-chips" aria-label="Categories">
+            <div className="pcp-cat-chips" aria-label="Categories">
               {categories.slice(0, 6).map((category) => (
-                <Link className="pc-chip" to={`/categories/${category.slug}`} key={category.id}>
+                <Link className="pcp-chip" to={`/categories/${category.slug}`} key={category.id}>
                   {category.name}
                 </Link>
               ))}
             </div>
 
-            <div className="pc-results-meta" aria-live="polite">
-              {loading ? "Loading products..." : `${pagination.total || products.length} product${(pagination.total || products.length) === 1 ? "" : "s"}`}
+            <div className="pcp-results-meta" aria-live="polite">
+              {loading
+                ? "Loading products…"
+                : `${pagination.total || products.length} product${(pagination.total || products.length) === 1 ? "" : "s"}`}
             </div>
           </section>
 
           {error ? (
-            <section className="pc-state-panel" role="alert">
+            <section className="pcp-state-panel" role="alert">
               <div>
                 <h2>Product feed unavailable</h2>
                 <p>{error}</p>
-                <button className="pc-chip active" type="button" onClick={() => window.location.reload()}>
+                <button className="pcp-state-btn" type="button" onClick={() => window.location.reload()}>
                   Retry
                 </button>
               </div>
             </section>
           ) : products.length === 0 && !loading ? (
-            <section className="pc-state-panel">
+            <section className="pcp-state-panel">
               <div>
                 <h2>No products found</h2>
                 <p>Try a different search term or clear the active filter to see more of the catalog.</p>
-                <button className="pc-chip active" type="button" onClick={() => updateParams({ featured: "", q: "", page: "" })}>
+                <button className="pcp-state-btn" type="button" onClick={() => updateParams({ featured: "", q: "", page: "" })}>
                   Show all products
                 </button>
               </div>
             </section>
           ) : (
             <>
-              <section className="pc-products-grid" aria-label="Product results">
+              <section className="pcp-grid" aria-label="Product results">
                 {loading ? <ProductsSkeleton /> : products.map((product) => (
                   <ProductCard product={product} key={product.id} />
                 ))}
               </section>
 
               {!loading && pagination.total_pages > 1 && (
-                <nav className="pc-pagination" aria-label="Product pagination">
+                <nav className="pcp-pagination" aria-label="Product pagination">
                   <button
-                    className="pc-page-button"
+                    className="pcp-page-btn"
                     type="button"
                     disabled={!pagination.has_previous}
                     onClick={() => goToPage(Math.max(1, page - 1))}
@@ -706,11 +445,11 @@ export default function ProductsPage() {
                     <i className="ti ti-chevron-left" aria-hidden="true" />
                     Prev
                   </button>
-                  <span className="pc-page-status">
+                  <span className="pcp-page-status">
                     Page {pagination.page || page} of {pagination.total_pages}
                   </span>
                   <button
-                    className="pc-page-button"
+                    className="pcp-page-btn"
                     type="button"
                     disabled={!pagination.has_next}
                     onClick={() => goToPage(page + 1)}

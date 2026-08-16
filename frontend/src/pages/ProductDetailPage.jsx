@@ -9,10 +9,20 @@ import { fetchProduct } from "../api/products";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 
+const T = {
+  paper: "#FFFFFF",
+  cream: "#F6F1E6",
+  ink: "#221E19",
+  inkSoft: "#5B564C",
+  brass: "#A5793A",
+  brassDark: "#7C5A29",
+  oxide: "#8B4632",
+  sage: "#4d7a4d",
+  line: "#E5DFD1",
+};
+
 export default function ProductDetailPage() {
   const { slug } = useParams();
-  // useParams reads :slug from the route /products/:slug
-
   const navigate = useNavigate();
   const { addItem } = useCart();
   const { user } = useAuth();
@@ -23,7 +33,6 @@ export default function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1);
   const [adding, setAdding] = useState(false);
   const [addedFeedback, setAddedFeedback] = useState(false);
-  // addedFeedback: shows "Added!" briefly after adding to cart
 
   useEffect(() => {
     setLoading(true);
@@ -38,11 +47,10 @@ export default function ProductDetailPage() {
         }
       })
       .finally(() => setLoading(false));
-  }, [slug]); // re-fetch whenever slug changes
+  }, [slug]);
 
   async function handleAddToCart() {
     if (!user) {
-      // Redirect to login, remembering to come back here
       navigate("/login", { state: { from: `/products/${slug}` } });
       return;
     }
@@ -74,14 +82,14 @@ export default function ProductDetailPage() {
       <p style={styles.errorCode}>404</p>
       <h1 style={styles.errorTitle}>Product not found</h1>
       <p style={styles.errorDesc}>This product may no longer be available.</p>
-      <Link to="/products" style={styles.goldBtn}>Browse all products</Link>
+      <Link to="/products" style={styles.darkBtn}>Browse all products</Link>
     </div>
   );
 
   if (error) return (
     <div style={styles.errorWrap}>
       <p style={styles.errorDesc}>{error}</p>
-      <button onClick={() => window.location.reload()} style={styles.goldBtn}>Try again</button>
+      <button onClick={() => window.location.reload()} style={styles.darkBtn}>Try again</button>
     </div>
   );
 
@@ -89,30 +97,35 @@ export default function ProductDetailPage() {
     <>
       <style>{`
         @keyframes pc-spin { to { transform: rotate(360deg); } }
-        .pc-qty-btn { width:36px;height:36px;border-radius:8px;border:1px solid rgba(196,148,72,0.25);background:transparent;color:#c4ab82;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s,color 0.2s; }
-        .pc-qty-btn:hover:not(:disabled) { background:rgba(196,148,72,0.1);color:#e8c87a; }
+        .pc-qty-btn { width:36px;height:36px;border-radius:3px;border:1px solid #E5DFD1;background:#FFFFFF;color:#221E19;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s,border-color 0.2s; }
+        .pc-qty-btn:hover:not(:disabled) { background:#F6F1E6;border-color:#A5793A; }
         .pc-qty-btn:disabled { opacity:0.35;cursor:not-allowed; }
-        .pc-add-btn { flex:1;height:52px;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:0.03em;transition:opacity 0.2s,transform 0.15s; }
-        .pc-add-btn:hover:not(:disabled) { opacity:0.88;transform:translateY(-2px); }
+        .pc-add-btn { flex:1;height:52px;border:none;border-radius:3px;font-size:15px;font-weight:600;cursor:pointer;letter-spacing:0.02em;transition:background 0.2s;font-family:'Archivo',sans-serif; }
         .pc-add-btn:disabled { opacity:0.55;cursor:not-allowed; }
-        .pc-wish-btn { width:52px;height:52px;border-radius:12px;border:1px solid rgba(196,148,72,0.25);background:transparent;color:#c4ab82;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s,border-color 0.2s,color 0.2s; }
-        .pc-wish-btn:hover { background:rgba(196,148,72,0.08);border-color:rgba(196,148,72,0.4);color:#e8c87a; }
+        .pc-wish-btn { width:52px;height:52px;border-radius:3px;border:1px solid #E5DFD1;background:#FFFFFF;color:#5B564C;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s,border-color 0.2s,color 0.2s; }
+        .pc-wish-btn:hover { background:#F6F1E6;border-color:#A5793A;color:#7C5A29; }
         @media(max-width:800px){
-          .pd-grid { grid-template-columns:1fr !important; }
+          .pd-grid { grid-template-columns:1fr !important; gap:2rem !important; }
           .pd-image-wrap { aspect-ratio:4/3 !important; }
+        }
+        @media(max-width:480px){
+          .pd-page { padding:1.5rem 1rem !important; }
+          .pd-crumb-current { max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+          .pd-actions { flex-direction:column !important; }
+          .pc-wish-btn { width:100% !important; }
         }
       `}</style>
 
-      <main style={{ background: "#120a06", minHeight: "100vh", padding: "2.5rem 1.5rem" }}>
+      <main className="pd-page" style={{ background: T.paper, minHeight: "100vh", padding: "2.5rem 1.5rem", fontFamily: "'Archivo',sans-serif" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
 
           {/* Breadcrumb */}
-          <nav style={{ marginBottom: "2rem", display: "flex", gap: "0.5rem", alignItems: "center", fontSize: 13, color: "#5a3e22" }} aria-label="Breadcrumb">
-            <Link to="/" style={{ color: "#7a5e3a", textDecoration: "none" }}>Home</Link>
+          <nav style={{ marginBottom: "2rem", display: "flex", gap: "0.5rem", alignItems: "center", fontSize: 13, color: T.inkSoft }} aria-label="Breadcrumb">
+            <Link to="/" style={{ color: T.inkSoft, textDecoration: "none" }}>Home</Link>
             <i className="ti ti-chevron-right" style={{ fontSize: 12 }} aria-hidden="true" />
-            <Link to="/products" style={{ color: "#7a5e3a", textDecoration: "none" }}>Products</Link>
+            <Link to="/products" style={{ color: T.inkSoft, textDecoration: "none" }}>Products</Link>
             <i className="ti ti-chevron-right" style={{ fontSize: 12 }} aria-hidden="true" />
-            <span style={{ color: "#c4ab82" }}>{product.name}</span>
+            <span className="pd-crumb-current" style={{ color: T.ink }}>{product.name}</span>
           </nav>
 
           {/* Main grid */}
@@ -120,9 +133,9 @@ export default function ProductDetailPage() {
 
             {/* Image */}
             <div className="pd-image-wrap" style={{
-              aspectRatio: "4/5", borderRadius: 16,
-              background: "linear-gradient(135deg,#2a1708 0%,#1a0f08 60%,#261505 100%)",
-              border: "1px solid rgba(196,148,72,0.15)",
+              aspectRatio: "4/5", borderRadius: 4,
+              background: T.cream,
+              border: `1px solid ${T.line}`,
               overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center",
             }}>
               {product.image_url ? (
@@ -130,69 +143,69 @@ export default function ProductDetailPage() {
               ) : (
                 <div style={{ textAlign: "center" }}>
                   <div style={{
-                    width: 100, height: 100, borderRadius: "50%",
-                    background: "rgba(196,148,72,0.1)", border: "1px solid rgba(196,148,72,0.2)",
+                    width: 96, height: 96, borderRadius: "50%",
+                    background: T.paper, border: `1px solid ${T.line}`,
                     display: "flex", alignItems: "center", justifyContent: "center",
-                    margin: "0 auto 12px", fontSize: 36, fontWeight: 600,
-                    color: "#c49448", fontFamily: "Georgia,serif",
+                    margin: "0 auto 12px", fontSize: 32, fontWeight: 400,
+                    color: T.brassDark, fontFamily: "'Instrument Serif',serif",
                   }}>
                     {product.name.slice(0, 2).toUpperCase()}
                   </div>
-                  <p style={{ color: "#5a3e22", fontSize: 13 }}>No image available</p>
+                  <p style={{ color: T.inkSoft, fontSize: 13 }}>No image available</p>
                 </div>
               )}
             </div>
 
             {/* Info */}
             <div>
-              {/* Category pill */}
               {product.category && (
                 <Link to={`/categories/${product.category.slug}`} style={{
                   display: "inline-block", marginBottom: "1rem",
-                  padding: "4px 12px", borderRadius: 20,
-                  background: "rgba(196,148,72,0.1)", border: "1px solid rgba(196,148,72,0.2)",
-                  fontSize: 12, color: "#c49448", textDecoration: "none", letterSpacing: "0.06em",
+                  padding: "5px 12px", borderRadius: 20,
+                  background: T.cream, border: `1px solid ${T.line}`,
+                  fontFamily: "'IBM Plex Mono',monospace",
+                  fontSize: 11.5, color: T.brassDark, textDecoration: "none", letterSpacing: "0.06em",
                 }}>
                   {product.category.name}
                 </Link>
               )}
 
-              <h1 style={{ fontFamily: "Georgia,serif", fontSize: "clamp(1.8rem,3vw,2.4rem)", fontWeight: 400, color: "#f0dba8", margin: "0 0 0.75rem", lineHeight: 1.2 }}>
+              <h1 style={{ fontFamily: "'Instrument Serif',serif", fontSize: "clamp(1.8rem,3vw,2.4rem)", fontWeight: 400, color: T.ink, margin: "0 0 0.75rem", lineHeight: 1.2 }}>
                 {product.name}
               </h1>
 
-              <p style={{ fontSize: "2rem", fontWeight: 700, color: "#c49448", margin: "0 0 1.5rem", fontFamily: "Georgia,serif" }}>
+              <p style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: "1.6rem", fontWeight: 500, color: T.brassDark, margin: "0 0 1.5rem" }}>
                 KES {parseInt(product.price).toLocaleString()}
               </p>
 
               {/* Stock badge */}
               <div style={{ marginBottom: "1.5rem" }}>
                 {!inStock && (
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 20, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", fontSize: 13, color: "#fca5a5" }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 20, background: "rgba(139,70,50,0.06)", border: "1px solid rgba(139,70,50,0.25)", fontSize: 13, color: T.oxide }}>
                     <i className="ti ti-x" style={{ fontSize: 12 }} aria-hidden="true" /> Out of stock
                   </span>
                 )}
                 {lowStock && (
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 20, background: "rgba(196,148,72,0.1)", border: "1px solid rgba(196,148,72,0.25)", fontSize: 13, color: "#e8c87a" }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 20, background: T.cream, border: `1px solid ${T.line}`, fontSize: 13, color: T.brassDark }}>
                     <i className="ti ti-alert-triangle" style={{ fontSize: 12 }} aria-hidden="true" /> Only {product.stock} left
                   </span>
                 )}
                 {inStock && !lowStock && (
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 20, background: "rgba(34,197,94,0.08)", border: "1px solid rgba(34,197,94,0.2)", fontSize: 13, color: "#86efac" }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 20, background: "rgba(77,122,77,0.07)", border: "1px solid rgba(77,122,77,0.2)", fontSize: 13, color: T.sage }}>
                     <i className="ti ti-check" style={{ fontSize: 12 }} aria-hidden="true" /> In stock
                   </span>
                 )}
               </div>
 
               {/* Description */}
-              <p style={{ fontSize: 15, lineHeight: 1.8, color: "#9a7a4a", margin: "0 0 2rem", borderTop: "1px solid rgba(196,148,72,0.1)", paddingTop: "1.5rem" }}>
+              <p style={{ fontSize: 15, lineHeight: 1.8, color: T.inkSoft, margin: "0 0 2rem", borderTop: `1px solid ${T.line}`, paddingTop: "1.5rem" }}>
                 {product.description}
               </p>
 
               {/* Quantity + Add to cart */}
               {inStock && (
                 <div style={{ marginBottom: "1.5rem" }}>
-                  <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7a5e3a", marginBottom: 10 }}>
+                  <p style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 11, fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase", color: T.inkSoft, marginBottom: 10 }}>
                     Quantity
                   </p>
                   <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem" }}>
@@ -204,7 +217,7 @@ export default function ProductDetailPage() {
                     >
                       <i className="ti ti-minus" aria-hidden="true" />
                     </button>
-                    <span style={{ minWidth: 32, textAlign: "center", fontSize: 16, fontWeight: 600, color: "#f0dba8" }}>
+                    <span style={{ minWidth: 32, textAlign: "center", fontSize: 16, fontWeight: 600, color: T.ink }}>
                       {quantity}
                     </span>
                     <button
@@ -215,26 +228,28 @@ export default function ProductDetailPage() {
                     >
                       <i className="ti ti-plus" aria-hidden="true" />
                     </button>
-                    <span style={{ fontSize: 13, color: "#5a3e22" }}>
+                    <span style={{ fontSize: 13, color: T.inkSoft }}>
                       {product.stock} available
                     </span>
                   </div>
 
-                  <div style={{ display: "flex", gap: "0.75rem" }}>
+                  <div className="pd-actions" style={{ display: "flex", gap: "0.75rem" }}>
                     <button
                       className="pc-add-btn"
                       onClick={handleAddToCart}
                       disabled={adding}
                       style={{
-                        background: addedFeedback
-                          ? "linear-gradient(135deg,#22c55e,#16a34a)"
-                          : "linear-gradient(135deg,#c49448,#8b5e1a)",
-                        color: "#120a06",
+                        background: addedFeedback ? T.sage : T.ink,
+                        color: T.paper,
                       }}
                     >
                       {adding ? "Adding…" : addedFeedback ? "✓ Added to cart!" : "Add to Cart"}
                     </button>
-                    <button className="pc-wish-btn" aria-label="Save to wishlist">
+                    {/* STUB: no wishlist backend/feature exists yet — button is
+                        visually present but intentionally has no onClick.
+                        Wire this up once a wishlist endpoint exists, don't
+                        fake success feedback on a click that does nothing. */}
+                    <button className="pc-wish-btn" aria-label="Save to wishlist (coming soon)" title="Coming soon" disabled>
                       <i className="ti ti-heart" aria-hidden="true" />
                     </button>
                   </div>
@@ -242,14 +257,14 @@ export default function ProductDetailPage() {
               )}
 
               {/* Trust signals */}
-              <div style={{ borderTop: "1px solid rgba(196,148,72,0.1)", paddingTop: "1.5rem", display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+              <div style={{ borderTop: `1px solid ${T.line}`, paddingTop: "1.5rem", display: "flex", flexDirection: "column", gap: "0.6rem" }}>
                 {[
                   { icon: "ti-truck", text: "Free delivery in Nairobi on orders over KES 3,000" },
                   { icon: "ti-shield-check", text: "Pay with M-Pesa or Cash on Delivery" },
                   { icon: "ti-refresh", text: "7-day hassle-free returns" },
                 ].map((t) => (
-                  <div key={t.text} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "#7a5e3a" }}>
-                    <i className={`ti ${t.icon}`} style={{ color: "#c49448", fontSize: 16, flexShrink: 0 }} aria-hidden="true" />
+                  <div key={t.text} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: T.inkSoft }}>
+                    <i className={`ti ${t.icon}`} style={{ color: T.brassDark, fontSize: 16, flexShrink: 0 }} aria-hidden="true" />
                     {t.text}
                   </div>
                 ))}
@@ -263,12 +278,12 @@ export default function ProductDetailPage() {
 }
 
 const styles = {
-  loadingWrap: { minHeight: "60vh", background: "#120a06", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "1rem" },
-  spinner: { width: 36, height: 36, borderRadius: "50%", border: "3px solid rgba(196,148,72,0.15)", borderTopColor: "#c49448", animation: "pc-spin 0.8s linear infinite" },
-  loadingText: { color: "#7a5e3a", fontSize: 14 },
-  errorWrap: { minHeight: "70vh", background: "#120a06", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "2rem", gap: "0.75rem" },
-  errorCode: { fontFamily: "Georgia,serif", fontSize: 96, color: "rgba(196,148,72,0.12)", margin: 0, lineHeight: 1 },
-  errorTitle: { fontFamily: "Georgia,serif", fontSize: "2rem", color: "#f0dba8", margin: 0 },
-  errorDesc: { color: "#7a5e3a", fontSize: 15, margin: 0 },
-  goldBtn: { marginTop: "0.5rem", display: "inline-flex", alignItems: "center", gap: 8, padding: "0.75rem 2rem", background: "linear-gradient(135deg,#c49448,#8b5e1a)", borderRadius: 10, color: "#120a06", fontWeight: 700, textDecoration: "none", fontSize: 14, border: "none", cursor: "pointer" },
+  loadingWrap: { minHeight: "60vh", background: T.paper, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "1rem" },
+  spinner: { width: 32, height: 32, borderRadius: "50%", border: `3px solid ${T.line}`, borderTopColor: T.brass, animation: "pc-spin 0.8s linear infinite" },
+  loadingText: { color: T.inkSoft, fontSize: 14, fontFamily: "'Archivo',sans-serif" },
+  errorWrap: { minHeight: "70vh", background: T.paper, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "2rem", gap: "0.75rem" },
+  errorCode: { fontFamily: "'Instrument Serif',serif", fontSize: 88, color: T.line, margin: 0, lineHeight: 1 },
+  errorTitle: { fontFamily: "'Instrument Serif',serif", fontSize: "2rem", color: T.ink, margin: 0, fontWeight: 400 },
+  errorDesc: { color: T.inkSoft, fontSize: 15, margin: 0, fontFamily: "'Archivo',sans-serif" },
+  darkBtn: { marginTop: "0.5rem", display: "inline-flex", alignItems: "center", gap: 8, padding: "0.85rem 2rem", background: T.ink, borderRadius: 3, color: T.paper, fontWeight: 600, textDecoration: "none", fontSize: 14, border: "none", cursor: "pointer", fontFamily: "'Archivo',sans-serif" },
 };
