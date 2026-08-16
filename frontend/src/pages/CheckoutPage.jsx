@@ -11,6 +11,22 @@ import apiClient from "../api/client";
 
 const STEPS = ["Delivery details", "Payment", "Confirm"];
 
+// Plain JS constant, not CSS custom properties — the success screen below
+// is a separate early `return`, so a <style> block defined only in the
+// main layout branch would never reach it. Using T.xxx directly in both
+// branches means neither one depends on which JSX tree actually renders.
+const T = {
+  paper: "#FFFFFF",
+  cream: "#F6F1E6",
+  ink: "#221E19",
+  inkSoft: "#5B564C",
+  brass: "#A5793A",
+  brassDark: "#7C5A29",
+  oxide: "#8B4632",
+  sage: "#4d7a4d",
+  line: "#E5DFD1",
+};
+
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const { cart, clearCart } = useCart();
@@ -19,7 +35,7 @@ export default function CheckoutPage() {
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [mpesaError, setMpesaError] = useState(""); // separate so order success still shows
+  const [mpesaError, setMpesaError] = useState("");
   const [placedOrder, setPlacedOrder] = useState(null);
 
   const [form, setForm] = useState({
@@ -103,8 +119,6 @@ export default function CheckoutPage() {
             order_id: order.id,
           });
         } catch (mpesaErr) {
-          // Order exists — just warn the user, don't block the success screen.
-          // They can retry from /orders.
           const detail =
             mpesaErr.response?.data?.error ||
             mpesaErr.response?.data?.detail ||
@@ -135,39 +149,38 @@ export default function CheckoutPage() {
   // ── Success screen ──
   if (step === 2 && placedOrder) {
     return (
-      <main style={{ background: "#120a06", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
+      <main style={{ background: T.paper, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem", fontFamily: "'Archivo',sans-serif" }}>
         <div style={{ maxWidth: 520, textAlign: "center" }}>
-          <div style={{ width: 80, height: 80, borderRadius: "50%", background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.25)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1.5rem", fontSize: 36, color: "#86efac" }}>
+          <div style={{ width: 72, height: 72, borderRadius: "50%", background: "rgba(77,122,77,0.08)", border: `1px solid rgba(77,122,77,0.25)`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1.5rem", fontSize: 32, color: T.sage }}>
             <i className="ti ti-check" aria-hidden="true" />
           </div>
-          <h1 style={{ fontFamily: "Georgia,serif", fontSize: "2rem", color: "#f0dba8", margin: "0 0 0.75rem", fontWeight: 400 }}>
+          <h1 style={{ fontFamily: "'Instrument Serif',serif", fontSize: "2rem", color: T.ink, margin: "0 0 0.75rem", fontWeight: 400 }}>
             Order placed!
           </h1>
-          <p style={{ color: "#7a5e3a", fontSize: 15, lineHeight: 1.7, margin: "0 0 0.5rem" }}>
+          <p style={{ color: T.inkSoft, fontSize: 15, lineHeight: 1.7, margin: "0 0 0.5rem" }}>
             Thank you, {placedOrder.full_name.split(" ")[0]}. Your order{" "}
-            <strong style={{ color: "#c49448" }}>#{placedOrder.id}</strong> has been received.
+            <strong style={{ color: T.brassDark }}>#{placedOrder.id}</strong> has been received.
           </p>
 
           {placedOrder.payment_method === "mpesa" ? (
             <>
-              <p style={{ color: "#c4ab82", fontSize: 14, lineHeight: 1.7, margin: "0 0 1rem", padding: "1rem", background: "rgba(196,148,72,0.06)", border: "1px solid rgba(196,148,72,0.15)", borderRadius: 10 }}>
-                An M-Pesa prompt has been sent to <strong>{placedOrder.phone_number}</strong>. Enter your PIN to complete payment.
+              <p style={{ color: T.inkSoft, fontSize: 14, lineHeight: 1.7, margin: "0 0 1rem", padding: "1rem", background: T.cream, border: `1px solid ${T.line}`, borderRadius: 4 }}>
+                An M-Pesa prompt has been sent to <strong style={{ color: T.ink }}>{placedOrder.phone_number}</strong>. Enter your PIN to complete payment.
               </p>
-              {/* Show STK push error inline without hiding the success state */}
               {mpesaError && (
-                <p style={{ color: "#fca5a5", fontSize: 13, lineHeight: 1.6, margin: "0 0 1rem", padding: "10px 14px", background: "rgba(239,68,68,0.07)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 10 }}>
+                <p style={{ color: T.oxide, fontSize: 13, lineHeight: 1.6, margin: "0 0 1rem", padding: "10px 14px", background: "rgba(139,70,50,0.06)", border: "1px solid rgba(139,70,50,0.2)", borderRadius: 4 }}>
                   ⚠️ {mpesaError}
                 </p>
               )}
             </>
           ) : (
-            <p style={{ color: "#7a5e3a", fontSize: 14, lineHeight: 1.7, margin: "0 0 2rem" }}>
-              You'll pay <strong style={{ color: "#c49448" }}>KES {parseInt(placedOrder.total_amount).toLocaleString()}</strong> on delivery. We'll contact you on {placedOrder.phone_number} to confirm delivery.
+            <p style={{ color: T.inkSoft, fontSize: 14, lineHeight: 1.7, margin: "0 0 2rem" }}>
+              You'll pay <strong style={{ color: T.brassDark }}>KES {parseInt(placedOrder.total_amount).toLocaleString()}</strong> on delivery. We'll contact you on {placedOrder.phone_number} to confirm delivery.
             </p>
           )}
 
           <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center", flexWrap: "wrap", marginTop: "1.5rem" }}>
-            <Link to="/orders" style={styles.goldBtn}>View my orders</Link>
+            <Link to="/orders" style={styles.darkBtn}>View my orders</Link>
             <Link to="/products" style={styles.ghostBtn}>Continue shopping</Link>
           </div>
         </div>
@@ -179,27 +192,27 @@ export default function CheckoutPage() {
     <>
       <style>{`
         @keyframes pc-spin { to { transform: rotate(360deg); } }
-        .ck-input { width:100%;height:50px;padding:0 16px;border-radius:10px;border:1px solid rgba(196,148,72,0.2);background:#120a06;color:#f0dba8;font-size:15px;outline:none;transition:border-color 0.2s,box-shadow 0.2s; }
-        .ck-input.error { border-color:rgba(239,68,68,0.5); }
-        .ck-input::placeholder { color:#5a3e22; }
-        .ck-input:focus { border-color:#c49448;box-shadow:0 0 0 3px rgba(196,148,72,0.12); }
-        .ck-textarea { width:100%;padding:12px 16px;border-radius:10px;border:1px solid rgba(196,148,72,0.2);background:#120a06;color:#f0dba8;font-size:15px;outline:none;resize:vertical;min-height:90px;transition:border-color 0.2s,box-shadow 0.2s;font-family:inherit; }
-        .ck-textarea:focus { border-color:#c49448;box-shadow:0 0 0 3px rgba(196,148,72,0.12); }
-        .ck-payment-opt { display:flex;align-items:flex-start;gap:14px;padding:16px;border-radius:12px;border:2px solid transparent;cursor:pointer;transition:border-color 0.2s,background 0.2s; }
-        .ck-payment-opt.selected { border-color:#c49448;background:rgba(196,148,72,0.06); }
-        .ck-payment-opt:not(.selected) { border-color:rgba(196,148,72,0.15);background:#1a0f08; }
+        .ck-input { width:100%;height:50px;padding:0 16px;border-radius:3px;border:1px solid #E5DFD1;background:#FFFFFF;color:#221E19;font-size:15px;outline:none;transition:border-color 0.2s,box-shadow 0.2s;font-family:'Archivo',sans-serif; }
+        .ck-input.error { border-color:#8B4632; }
+        .ck-input::placeholder { color:#B5AA98; }
+        .ck-input:focus { border-color:#A5793A;box-shadow:0 0 0 3px rgba(165,121,58,0.12); }
+        .ck-textarea { width:100%;padding:12px 16px;border-radius:3px;border:1px solid #E5DFD1;background:#FFFFFF;color:#221E19;font-size:15px;outline:none;resize:vertical;min-height:90px;transition:border-color 0.2s,box-shadow 0.2s;font-family:'Archivo',sans-serif; }
+        .ck-textarea:focus { border-color:#A5793A;box-shadow:0 0 0 3px rgba(165,121,58,0.12); }
+        .ck-payment-opt { display:flex;align-items:flex-start;gap:14px;padding:16px;border-radius:4px;border:1.5px solid transparent;cursor:pointer;transition:border-color 0.2s,background 0.2s; }
+        .ck-payment-opt.selected { border-color:#A5793A;background:#F6F1E6; }
+        .ck-payment-opt:not(.selected) { border-color:#E5DFD1;background:#FFFFFF; }
         @media(max-width:780px){ .ck-layout{ grid-template-columns:1fr !important; } }
+        @media(max-width:480px){ .ck-page{ padding:1.5rem 1rem !important; } }
       `}</style>
 
-      <main style={{ background: "#120a06", minHeight: "100vh", padding: "2.5rem 1.5rem" }}>
+      <main className="ck-page" style={{ background: T.paper, minHeight: "100vh", padding: "2.5rem 1.5rem", fontFamily: "'Archivo',sans-serif" }}>
         <div style={{ maxWidth: 1000, margin: "0 auto" }}>
 
-          {/* Header + step indicator */}
           <div style={{ marginBottom: "2.5rem" }}>
-            <Link to="/cart" style={{ display: "inline-flex", alignItems: "center", gap: 8, color: "#7a5e3a", textDecoration: "none", fontSize: 14, marginBottom: "1.25rem" }}>
+            <Link to="/cart" style={{ display: "inline-flex", alignItems: "center", gap: 8, color: T.inkSoft, textDecoration: "none", fontSize: 14, marginBottom: "1.25rem" }}>
               <i className="ti ti-arrow-left" aria-hidden="true" /> Back to cart
             </Link>
-            <h1 style={{ fontFamily: "Georgia,serif", fontSize: "clamp(1.8rem,3vw,2.4rem)", fontWeight: 400, color: "#f0dba8", margin: "0 0 1.5rem" }}>
+            <h1 style={{ fontFamily: "'Instrument Serif',serif", fontSize: "clamp(1.8rem,3vw,2.4rem)", fontWeight: 400, color: T.ink, margin: "0 0 1.5rem" }}>
               Checkout
             </h1>
 
@@ -208,20 +221,20 @@ export default function CheckoutPage() {
                 <div key={label} style={{ display: "flex", alignItems: "center", flex: i < 1 ? 1 : "none" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <div style={{
-                      width: 28, height: 28, borderRadius: "50%", flexShrink: 0,
-                      background: i <= step ? "linear-gradient(135deg,#c49448,#8b5e1a)" : "rgba(196,148,72,0.1)",
-                      border: i <= step ? "none" : "1px solid rgba(196,148,72,0.2)",
+                      width: 26, height: 26, borderRadius: "50%", flexShrink: 0,
+                      background: i <= step ? T.ink : T.paper,
+                      border: i <= step ? "none" : `1px solid ${T.line}`,
                       display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: 12, fontWeight: 700,
-                      color: i <= step ? "#120a06" : "#5a3e22",
+                      fontSize: 12, fontWeight: 600,
+                      color: i <= step ? T.paper : T.inkSoft,
                     }}>
                       {i < step ? <i className="ti ti-check" aria-hidden="true" /> : i + 1}
                     </div>
-                    <span style={{ fontSize: 13, fontWeight: 500, color: i === step ? "#e8c87a" : "#5a3e22", whiteSpace: "nowrap" }}>
+                    <span style={{ fontFamily: "'IBM Plex Mono',monospace", fontSize: 12, fontWeight: 500, color: i === step ? T.ink : T.inkSoft, whiteSpace: "nowrap" }}>
                       {label}
                     </span>
                   </div>
-                  {i < 1 && <div style={{ flex: 1, height: 1, background: i < step ? "rgba(196,148,72,0.4)" : "rgba(196,148,72,0.12)", margin: "0 12px" }} />}
+                  {i < 1 && <div style={{ flex: 1, height: 1, background: i < step ? T.brass : T.line, margin: "0 12px" }} />}
                 </div>
               ))}
             </div>
@@ -229,10 +242,9 @@ export default function CheckoutPage() {
 
           <div className="ck-layout" style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: "2rem", alignItems: "start" }}>
 
-            {/* Left: form */}
             <div>
               {error && (
-                <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", color: "#fca5a5", padding: "12px 16px", borderRadius: 10, fontSize: 14, marginBottom: "1.5rem" }} role="alert">
+                <div style={{ background: "rgba(139,70,50,0.06)", border: "1px solid rgba(139,70,50,0.25)", color: T.oxide, padding: "12px 16px", borderRadius: 4, fontSize: 14, marginBottom: "1.5rem" }} role="alert">
                   {error}
                 </div>
               )}
@@ -271,7 +283,7 @@ export default function CheckoutPage() {
 
                     <div>
                       <label style={styles.label} htmlFor="notes">
-                        Order notes <span style={{ color: "#5a3e22", fontWeight: 400 }}>(optional)</span>
+                        Order notes <span style={{ color: T.inkSoft, fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>(optional)</span>
                       </label>
                       <textarea
                         id="notes" name="notes"
@@ -296,17 +308,17 @@ export default function CheckoutPage() {
                       role="radio" aria-checked={form.payment_method === "mpesa"} tabIndex={0}
                       onKeyDown={(e) => e.key === "Enter" && setForm((f) => ({ ...f, payment_method: "mpesa" }))}
                     >
-                      <div style={{ width: 44, height: 44, borderRadius: 10, background: "rgba(34,197,94,0.1)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        <i className="ti ti-device-mobile" style={{ fontSize: 22, color: "#86efac" }} aria-hidden="true" />
+                      <div style={{ width: 42, height: 42, borderRadius: 4, background: T.cream, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <i className="ti ti-device-mobile" style={{ fontSize: 20, color: T.brassDark }} aria-hidden="true" />
                       </div>
                       <div>
-                        <p style={{ margin: "0 0 3px", fontWeight: 600, color: "#ddc799", fontSize: 15 }}>M-Pesa</p>
-                        <p style={{ margin: 0, fontSize: 13, color: "#7a5e3a", lineHeight: 1.5 }}>
+                        <p style={{ margin: "0 0 3px", fontWeight: 600, color: T.ink, fontSize: 15 }}>M-Pesa</p>
+                        <p style={{ margin: 0, fontSize: 13, color: T.inkSoft, lineHeight: 1.5 }}>
                           Pay via Lipa na M-Pesa. You'll receive a prompt on your phone after placing the order.
                         </p>
                       </div>
-                      <div style={{ marginLeft: "auto", flexShrink: 0, width: 20, height: 20, borderRadius: "50%", border: `2px solid ${form.payment_method === "mpesa" ? "#c49448" : "rgba(196,148,72,0.25)"}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        {form.payment_method === "mpesa" && <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#c49448" }} />}
+                      <div style={{ marginLeft: "auto", flexShrink: 0, width: 18, height: 18, borderRadius: "50%", border: `2px solid ${form.payment_method === "mpesa" ? T.brass : T.line}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        {form.payment_method === "mpesa" && <div style={{ width: 9, height: 9, borderRadius: "50%", background: T.brass }} />}
                       </div>
                     </div>
 
@@ -316,17 +328,17 @@ export default function CheckoutPage() {
                       role="radio" aria-checked={form.payment_method === "cash_on_delivery"} tabIndex={0}
                       onKeyDown={(e) => e.key === "Enter" && setForm((f) => ({ ...f, payment_method: "cash_on_delivery" }))}
                     >
-                      <div style={{ width: 44, height: 44, borderRadius: 10, background: "rgba(196,148,72,0.08)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        <i className="ti ti-cash" style={{ fontSize: 22, color: "#c49448" }} aria-hidden="true" />
+                      <div style={{ width: 42, height: 42, borderRadius: 4, background: T.cream, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <i className="ti ti-cash" style={{ fontSize: 20, color: T.brassDark }} aria-hidden="true" />
                       </div>
                       <div>
-                        <p style={{ margin: "0 0 3px", fontWeight: 600, color: "#ddc799", fontSize: 15 }}>Cash on Delivery</p>
-                        <p style={{ margin: 0, fontSize: 13, color: "#7a5e3a", lineHeight: 1.5 }}>
+                        <p style={{ margin: "0 0 3px", fontWeight: 600, color: T.ink, fontSize: 15 }}>Cash on Delivery</p>
+                        <p style={{ margin: 0, fontSize: 13, color: T.inkSoft, lineHeight: 1.5 }}>
                           Pay in cash when your order is delivered. Available within Nairobi.
                         </p>
                       </div>
-                      <div style={{ marginLeft: "auto", flexShrink: 0, width: 20, height: 20, borderRadius: "50%", border: `2px solid ${form.payment_method === "cash_on_delivery" ? "#c49448" : "rgba(196,148,72,0.25)"}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        {form.payment_method === "cash_on_delivery" && <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#c49448" }} />}
+                      <div style={{ marginLeft: "auto", flexShrink: 0, width: 18, height: 18, borderRadius: "50%", border: `2px solid ${form.payment_method === "cash_on_delivery" ? T.brass : T.line}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        {form.payment_method === "cash_on_delivery" && <div style={{ width: 9, height: 9, borderRadius: "50%", background: T.brass }} />}
                       </div>
                     </div>
                   </div>
@@ -340,7 +352,7 @@ export default function CheckoutPage() {
                   </button>
                 )}
                 {step < 1 && (
-                  <button onClick={handleNextStep} style={styles.goldBtn}>
+                  <button onClick={handleNextStep} style={styles.darkBtn}>
                     Continue to payment <i className="ti ti-arrow-right" aria-hidden="true" />
                   </button>
                 )}
@@ -348,7 +360,7 @@ export default function CheckoutPage() {
                   <button
                     onClick={handlePlaceOrder}
                     disabled={submitting}
-                    style={{ ...styles.goldBtn, opacity: submitting ? 0.6 : 1, cursor: submitting ? "not-allowed" : "pointer" }}
+                    style={{ ...styles.darkBtn, opacity: submitting ? 0.6 : 1, cursor: submitting ? "not-allowed" : "pointer" }}
                   >
                     {submitting ? "Placing order…" : "Place Order"}
                     {!submitting && <i className="ti ti-check" aria-hidden="true" />}
@@ -358,36 +370,35 @@ export default function CheckoutPage() {
             </div>
 
             {/* Right: order summary */}
-            <div style={{ ...styles.card, position: "sticky", top: 88 }}>
+            <div style={{ ...styles.card, position: "sticky", top: 32 }}>
               <h2 style={styles.cardTitle}>Order summary</h2>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginBottom: "1rem" }}>
                 {items.map((item) => (
-                  // FIX: key was item.id which doesn't exist on cart items.
-                  // Cart items are shaped as { product: { id, name, ... }, quantity, price }
-                  // so the correct unique key is item.product.id.
+                  // key is item.product.id — cart items are shaped as
+                  // { product: { id, name, ... }, quantity, price }, not item.id
                   <div key={item.product.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.75rem", fontSize: 14 }}>
-                    <span style={{ color: "#c4ab82", flex: 1 }}>
+                    <span style={{ color: T.inkSoft, flex: 1 }}>
                       {item.product.name}
-                      <span style={{ color: "#5a3e22" }}> × {item.quantity}</span>
+                      <span style={{ color: "#B5AA98" }}> × {item.quantity}</span>
                     </span>
-                    <span style={{ color: "#ddc799", flexShrink: 0, fontWeight: 500 }}>
+                    <span style={{ color: T.ink, flexShrink: 0, fontWeight: 500, fontFamily: "'IBM Plex Mono',monospace", fontSize: 13 }}>
                       KES {(parseFloat(item.product.price) * item.quantity).toLocaleString()}
                     </span>
                   </div>
                 ))}
               </div>
 
-              <div style={{ borderTop: "1px solid rgba(196,148,72,0.12)", paddingTop: "1rem", display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                <span style={{ fontSize: 14, fontWeight: 600, color: "#ddc799" }}>Total</span>
-                <span style={{ fontSize: 20, fontWeight: 700, color: "#e8c87a", fontFamily: "Georgia,serif" }}>
+              <div style={{ borderTop: `1px solid ${T.line}`, paddingTop: "1rem", display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                <span style={{ fontSize: 14, fontWeight: 600, color: T.ink }}>Total</span>
+                <span style={{ fontSize: 19, fontWeight: 600, color: T.brassDark, fontFamily: "'IBM Plex Mono',monospace" }}>
                   KES {total.toLocaleString()}
                 </span>
               </div>
 
               {step === 1 && (
-                <div style={{ marginTop: "1.25rem", padding: "12px 14px", background: "rgba(196,148,72,0.05)", border: "1px solid rgba(196,148,72,0.12)", borderRadius: 10, fontSize: 13, color: "#7a5e3a", lineHeight: 1.7 }}>
-                  <p style={{ margin: "0 0 4px", fontWeight: 600, color: "#c4ab82" }}>Delivering to:</p>
+                <div style={{ marginTop: "1.25rem", padding: "12px 14px", background: T.cream, border: `1px solid ${T.line}`, borderRadius: 4, fontSize: 13, color: T.inkSoft, lineHeight: 1.7 }}>
+                  <p style={{ margin: "0 0 4px", fontWeight: 600, color: T.ink }}>Delivering to:</p>
                   <p style={{ margin: 0 }}>{form.full_name}</p>
                   <p style={{ margin: 0 }}>{form.phone_number}</p>
                   <p style={{ margin: 0 }}>{form.delivery_address}</p>
@@ -402,10 +413,10 @@ export default function CheckoutPage() {
 }
 
 const styles = {
-  card: { background: "#1a0f08", border: "1px solid rgba(196,148,72,0.18)", borderRadius: 16, padding: "1.75rem" },
-  cardTitle: { fontSize: 14, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#c49448", margin: "0 0 1.5rem" },
-  label: { display: "block", fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7a5e3a", marginBottom: 7 },
-  fieldErr: { fontSize: 12, color: "#fca5a5", margin: "5px 0 0" },
-  goldBtn: { display: "inline-flex", alignItems: "center", gap: 8, padding: "0.75rem 1.75rem", background: "linear-gradient(135deg,#c49448,#8b5e1a)", border: "none", borderRadius: 10, color: "#120a06", fontWeight: 700, fontSize: 14, cursor: "pointer", textDecoration: "none", letterSpacing: "0.03em" },
-  ghostBtn: { display: "inline-flex", alignItems: "center", gap: 8, padding: "0.75rem 1.5rem", background: "transparent", border: "1px solid rgba(196,148,72,0.25)", borderRadius: 10, color: "#c4ab82", fontWeight: 500, fontSize: 14, cursor: "pointer", textDecoration: "none" },
+  card: { background: T.paper, border: `1px solid ${T.line}`, borderRadius: 4, padding: "1.75rem" },
+  cardTitle: { fontFamily: "'IBM Plex Mono',monospace", fontSize: 12, fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase", color: T.brassDark, margin: "0 0 1.5rem" },
+  label: { display: "block", fontFamily: "'IBM Plex Mono',monospace", fontSize: 11, fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase", color: T.inkSoft, marginBottom: 7 },
+  fieldErr: { fontSize: 12, color: T.oxide, margin: "5px 0 0" },
+  darkBtn: { display: "inline-flex", alignItems: "center", gap: 8, padding: "0.85rem 1.75rem", background: T.ink, border: "none", borderRadius: 3, color: T.paper, fontWeight: 600, fontSize: 14, cursor: "pointer", textDecoration: "none", letterSpacing: "0.02em", fontFamily: "'Archivo',sans-serif" },
+  ghostBtn: { display: "inline-flex", alignItems: "center", gap: 8, padding: "0.85rem 1.5rem", background: "transparent", border: `1px solid ${T.line}`, borderRadius: 3, color: T.inkSoft, fontWeight: 500, fontSize: 14, cursor: "pointer", textDecoration: "none", fontFamily: "'Archivo',sans-serif" },
 };
